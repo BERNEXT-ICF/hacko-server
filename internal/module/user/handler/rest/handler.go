@@ -63,6 +63,12 @@ func (h *userHandler) register(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(response.Error(err))
 	}
 
+	// 	because the entity password RegisterRequest is optional, for login & register google
+	if req.Password == "" {
+		log.Warn().Msg("handler::register - Password is required")
+		return c.Status(fiber.StatusBadRequest).JSON(response.Error("Password is required"))
+	}
+
 	if err := v.Validate(req); err != nil {
 		log.Warn().Err(err).Msg("handler::register - Invalid request body")
 		code, errs := errmsg.Errors(err, req)
