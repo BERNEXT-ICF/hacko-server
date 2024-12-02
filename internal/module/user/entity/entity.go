@@ -10,7 +10,8 @@ type RegisterRequest struct {
 type RegisterByGoogleRequest struct {
 	Email          	string `json:"email" validate:"required,email"`
 	Name           	string `json:"name" validate:"required"`
-	GoogleId		string `json:"id"`			
+	GoogleId		string `json:"id"`	
+	ImageUrl		string `json:"picture"`	
 	Password       	string `json:"password,omitempty"`
 	HassedPassword 	string
 }

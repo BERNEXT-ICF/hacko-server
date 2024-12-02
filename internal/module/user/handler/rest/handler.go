@@ -1,21 +1,20 @@
 package rest
 
 import (
-	"encoding/json"
+	"fmt"
 	"hacko-app/internal/adapter"
 	"hacko-app/internal/infrastructure/config"
 	integOauth "hacko-app/internal/integration/oauth2google"
-	oauth "hacko-app/internal/integration/oauth2google/entity"
 	"hacko-app/internal/middleware"
 	"hacko-app/internal/module/user/entity"
 
-	"context"
 	"hacko-app/internal/module/user/ports"
 	"hacko-app/internal/module/user/repository"
 	"hacko-app/internal/module/user/service"
 	"hacko-app/pkg/errmsg"
 	"hacko-app/pkg/response"
 	"net/http"
+	"net/url"
 
 	"github.com/coreos/go-oidc"
 
@@ -154,17 +153,19 @@ func (h *userHandler) profile(c *fiber.Ctx) error {
 }
 
 func (h *userHandler) oauthGoogleUrl(c *fiber.Ctx) error {
-	return c.Redirect(h.integration.GetUrl("/"), http.StatusTemporaryRedirect)
+	referer := c.Get("Referer") 
+    if referer == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(response.Error(errmsg.NewCustomErrors(400, errmsg.WithMessage("Invalid request: Referer is missing from the request headers"))))
+    }
+	return c.Redirect(h.integration.GetUrl(referer), http.StatusTemporaryRedirect)
 }
 
 func (h *userHandler) callbackSigninGoogle(c *fiber.Ctx) error {
-	var (
-		ctx = c.Context()
-	)
+	var ctx = c.Context()
 
 	state, code := c.FormValue("state"), c.FormValue("code")
-	if state == "" && code == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(response.Error(errmsg.NewCustomErrors(400, errmsg.WithMessage("Invalid request"))))
+	if state == "" || code == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(response.Error(errmsg.NewCustomErrors(400, errmsg.WithMessage("Invalid request: state or code missing"))))
 	}
 
 	token, err := h.integration.Exchange(ctx, code)
@@ -173,6 +174,7 @@ func (h *userHandler) callbackSigninGoogle(c *fiber.Ctx) error {
 		return c.Status(code).JSON(response.Error(errs))
 	}
 
+	// Verifikasi token dengan Google
 	provider, err := oidc.NewProvider(ctx, "https://accounts.google.com")
 	if err != nil {
 		code, errs := errmsg.Errors[error](err)
@@ -182,32 +184,32 @@ func (h *userHandler) callbackSigninGoogle(c *fiber.Ctx) error {
 	verifier := provider.Verifier(&oidc.Config{
 		ClientID: config.Envs.Oauth.Google.ClientId,
 	})
-	_, err = verifier.Verify(context.Background(), token.Extra("id_token").(string))
+	_, err = verifier.Verify(ctx, token.Extra("id_token").(string))
 	if err != nil {
 		code, errs := errmsg.Errors[error](err)
 		return c.Status(code).JSON(response.Error(errs))
 	}
 
-	result, err := http.Get("https://www.googleapis.com/oauth2/v2/userinfo?access_token=" + token.AccessToken)
-	if err != nil {
-		code, errs := errmsg.Errors[error](err)
-		return c.Status(code).JSON(response.Error(errs))
-	}
-	defer result.Body.Close()
-
-	var userInfo oauth.UserInfoResponse
-	if err := json.NewDecoder(result.Body).Decode(&userInfo); err != nil {
-		code, errs := errmsg.Errors[error](err)
-		return c.Status(code).JSON(response.Error(errs))
-	}
-
-	res, err := h.service.LoginGoogle(ctx, &userInfo)
+	userInfo, err := h.integration.GetUserInfo(ctx, token)
 	if err != nil {
 		code, errs := errmsg.Errors[error](err)
 		return c.Status(code).JSON(response.Error(errs))
 	}
 
-	return c.Status(fiber.StatusOK).JSON(response.Success(res, ""))
+	if _, err := h.service.LoginGoogle(ctx, &userInfo); err != nil {
+		code, errs := errmsg.Errors[error](err)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	// Dekode URL state
+	redirectURL, err := url.QueryUnescape(state)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(response.Error("Invalid state parameter"))
+	}
+
+	// Redirect ke halaman frontend dengan path dashboard
+	finalRedirect := fmt.Sprintf("%s/dashboard", redirectURL)
+	return c.Redirect(finalRedirect, fiber.StatusTemporaryRedirect)
 }
 
 // Convert dari PRD ke user story
