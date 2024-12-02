@@ -8,6 +8,7 @@ import (
 
 type UserRepository interface {
 	Register(ctx context.Context, req *entity.RegisterRequest) (*entity.RegisterResponse, error)
+	RegisterByGoogle(ctx context.Context, req *entity.RegisterByGoogleRequest) (*entity.RegisterResponse, error)
 	FindByEmail(ctx context.Context, email string) (*entity.UserResult, error)
 	FindById(ctx context.Context, id string) (*entity.ProfileResponse, error)
 	UpdateRefreshToken(ctx context.Context, userId, refreshToken string) error

@@ -119,14 +119,15 @@ func (s *userService) LoginGoogle(ctx context.Context, req *oauthgoogleent.UserI
 		if errCustom, ok := err.(*errmsg.CustomError); ok {
 			if errCustom.Code == 400 {
 				// Create a request for registration
-				registerReq := &entity.RegisterRequest{
+				registerReq := &entity.RegisterByGoogleRequest{
 					Email:          req.Email,
 					Name:           req.Name,
+					GoogleId: 		req.Id,
 					Password:       "", 
 					HassedPassword: "",
 				}
 
-				_, regErr := s.repo.Register(ctx, registerReq)
+				_, regErr := s.repo.RegisterByGoogle(ctx, registerReq)
 				if regErr != nil {
 					log.Error().Err(regErr).Msg("service::loginGoogle - Failed to register a new user")
 					return nil, regErr
