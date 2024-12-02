@@ -29,17 +29,15 @@ func (r *userRepository) Register(ctx context.Context, req *entity.RegisterReque
 
 	query := `
 	INSERT INTO users (
-		role,
-		email,
-		name,
-		password
+    email,
+    name,
+    password
 	)
 	VALUES (
-		?, ?, ?, ?
+		?, ?, ?
 	)
 	RETURNING id
-`
-
+	`
 	err := r.db.QueryRowContext(ctx, r.db.Rebind(query), req.Email, req.Name, req.HassedPassword).Scan(&res.Id)
 	if err != nil {
 		pqErr, ok := err.(*pq.Error)
@@ -50,12 +48,19 @@ func (r *userRepository) Register(ctx context.Context, req *entity.RegisterReque
 
 		switch pqErr.Code.Name() {
 		case "unique_violation":
-			log.Warn().Err(err).Any("payload", req).Msg("repo::Register - Email already registered")
+			log.Warn().Msg("Email already registered")
 			return nil, errmsg.NewCustomErrors(409, errmsg.WithMessage("Email sudah terdaftar"))
+		case "not_null_violation":
+			log.Error().Err(err).Any("payload", req).Msg("Missing required fields")
+			return nil, errmsg.NewCustomErrors(400, errmsg.WithMessage("Data tidak lengkap"))
+		case "syntax_error":
+			log.Error().Err(err).Any("payload", req).Msg("Query syntax error")
+			return nil, errmsg.NewCustomErrors(500, errmsg.WithMessage("Kesalahan sintaks"))
 		default:
-			log.Error().Err(err).Any("payload", req).Msg("repo::Register - Failed to insert user")
+			log.Error().Err(err).Any("payload", req).Msg("Unhandled pq.Error")
 			return nil, err
 		}
+
 	}
 
 	return res, nil
@@ -76,7 +81,6 @@ func (r *userRepository) FindByEmail(ctx context.Context, email string) (*entity
 	WHERE
 		u.email = ?
 `
-
 
 	err := r.db.GetContext(ctx, res, r.db.Rebind(query), email)
 	if err != nil {
@@ -105,7 +109,6 @@ func (r *userRepository) FindById(ctx context.Context, id string) (*entity.Profi
 	WHERE
 		u.id = ?
 `
-
 
 	err := r.db.GetContext(ctx, res, r.db.Rebind(query), id)
 	if err != nil {
