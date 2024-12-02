@@ -11,6 +11,7 @@ import (
 	"hacko-app/pkg/jwthandler"
 	"time"
 
+	"github.com/lib/pq"
 	"github.com/rs/zerolog/log"
 )
 
@@ -93,15 +94,43 @@ func (s *userService) LoginGoogle(ctx context.Context, req *oauthgoogleent.UserI
 
 	user, err := s.repo.FindByEmail(ctx, req.Email)
 	if err != nil {
-		if errCostum, ok := err.(*errmsg.CustomError); ok {
-			if errCostum.Code != 400 {
-				return nil, err
+		// Handle custom errors first
+		if errCustom, ok := err.(*errmsg.CustomError); ok {
+			if errCustom.Code == 400 {
+				// Create a request for registration
+				registerReq := &entity.RegisterRequest{
+					Email:          req.Email,
+					Name:           req.Name,
+					Password:       "", 
+					HassedPassword: "",
+				}
+
+				_, regErr := s.repo.Register(ctx, registerReq)
+				if regErr != nil {
+					log.Error().Err(regErr).Msg("service::loginGoogle - Failed to register a new user")
+					return nil, regErr
+				}
+
+				user, err = s.repo.FindByEmail(ctx, req.Email)
+				if err != nil {
+					log.Error().Err(err).Msg("service::loginGoogle - Failed to find user after registration")
+					return nil, err
+				}
 			} else {
-				// TODO: logic to register user and save to database
-				return nil, errmsg.NewCustomErrors(404, errmsg.WithMessage("Email belum terdaftar"))
+				return nil, err
 			}
+		} else if pqErr, ok := err.(*pq.Error); ok {
+			
+			switch pqErr.Code.Name() {
+			case "unique_violation":
+				log.Warn().Msg("service::loginGoogle - Unique violations, no additional actions")
+			default:
+				log.Error().Err(err).Any("payload", req).Msg("service::loginGoogle - Unhandled pq.Error")
+				return nil, err
+			}
+		} else {
+			return nil, err
 		}
-		return nil, err
 	}
 
 	token, err := jwthandler.GenerateTokenString(jwthandler.CostumClaimsPayload{
@@ -110,6 +139,7 @@ func (s *userService) LoginGoogle(ctx context.Context, req *oauthgoogleent.UserI
 		TokenExpiration: time.Now().Add(time.Hour * 24),
 	})
 	if err != nil {
+		log.Error().Err(err).Msg("service::loginGoogle - Failed to generate tokens")
 		return nil, err
 	}
 
