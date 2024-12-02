@@ -123,6 +123,7 @@ func (s *userService) LoginGoogle(ctx context.Context, req *oauthgoogleent.UserI
 					Email:          req.Email,
 					Name:           req.Name,
 					GoogleId: 		req.Id,
+					ImageUrl: 		*req.PicURL,
 					Password:       "", 
 					HassedPassword: "",
 				}

@@ -74,14 +74,15 @@ func (r *userRepository) RegisterByGoogle(ctx context.Context, req *entity.Regis
     email,
     name,
     password,
-	google_id
+	google_id,
+	image_url
 	)
 	VALUES (
-		?, ?, ?, ?
+		?, ?, ?, ?, ?
 	)
 	RETURNING id
 	`
-	err := r.db.QueryRowContext(ctx, r.db.Rebind(query), req.Email, req.Name, req.HassedPassword, req.GoogleId).Scan(&res.Id)
+	err := r.db.QueryRowContext(ctx, r.db.Rebind(query), req.Email, req.Name, req.HassedPassword, req.GoogleId, req.ImageUrl).Scan(&res.Id)
 	if err != nil {
 		pqErr, ok := err.(*pq.Error)
 		if !ok {
