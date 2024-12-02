@@ -36,9 +36,9 @@ func (r *userRepository) Register(ctx context.Context, req *entity.RegisterReque
 	VALUES (
 		?, ?, ?
 	)
-	RETURNING id
+	RETURNING id, name
 	`
-	err := r.db.QueryRowContext(ctx, r.db.Rebind(query), req.Email, req.Name, req.HassedPassword).Scan(&res.Id)
+	err := r.db.QueryRowContext(ctx, r.db.Rebind(query), req.Email, req.Name, req.HassedPassword).Scan(&res.Id, &res.Name)
 	if err != nil {
 		pqErr, ok := err.(*pq.Error)
 		if !ok {
@@ -49,13 +49,56 @@ func (r *userRepository) Register(ctx context.Context, req *entity.RegisterReque
 		switch pqErr.Code.Name() {
 		case "unique_violation":
 			log.Warn().Msg("Email already registered")
-			return nil, errmsg.NewCustomErrors(409, errmsg.WithMessage("Email sudah terdaftar"))
+			return nil, errmsg.NewCustomErrors(409, errmsg.WithMessage("Email is already registered"))
 		case "not_null_violation":
 			log.Error().Err(err).Any("payload", req).Msg("Missing required fields")
-			return nil, errmsg.NewCustomErrors(400, errmsg.WithMessage("Data tidak lengkap"))
+			return nil, errmsg.NewCustomErrors(400, errmsg.WithMessage("Incomplete data"))
 		case "syntax_error":
 			log.Error().Err(err).Any("payload", req).Msg("Query syntax error")
-			return nil, errmsg.NewCustomErrors(500, errmsg.WithMessage("Kesalahan sintaks"))
+			return nil, errmsg.NewCustomErrors(500, errmsg.WithMessage("Syntax errors"))
+		default:
+			log.Error().Err(err).Any("payload", req).Msg("Unhandled pq.Error")
+			return nil, err
+		}
+
+	}
+
+	return res, nil
+}
+
+func (r *userRepository) RegisterByGoogle(ctx context.Context, req *entity.RegisterByGoogleRequest) (*entity.RegisterResponse, error) {
+	var res = new(entity.RegisterResponse)
+
+	query := `
+	INSERT INTO users (
+    email,
+    name,
+    password,
+	google_id
+	)
+	VALUES (
+		?, ?, ?, ?
+	)
+	RETURNING id
+	`
+	err := r.db.QueryRowContext(ctx, r.db.Rebind(query), req.Email, req.Name, req.HassedPassword, req.GoogleId).Scan(&res.Id)
+	if err != nil {
+		pqErr, ok := err.(*pq.Error)
+		if !ok {
+			log.Error().Err(err).Any("payload", req).Msg("repo::Register - Failed to insert user")
+			return nil, err
+		}
+
+		switch pqErr.Code.Name() {
+		case "unique_violation":
+			log.Warn().Msg("Email already registered")
+			return nil, errmsg.NewCustomErrors(409, errmsg.WithMessage("Email is already registered"))
+		case "not_null_violation":
+			log.Error().Err(err).Any("payload", req).Msg("Missing required fields")
+			return nil, errmsg.NewCustomErrors(400, errmsg.WithMessage("Incomplete data"))
+		case "syntax_error":
+			log.Error().Err(err).Any("payload", req).Msg("Query syntax error")
+			return nil, errmsg.NewCustomErrors(500, errmsg.WithMessage("Syntax errors"))
 		default:
 			log.Error().Err(err).Any("payload", req).Msg("Unhandled pq.Error")
 			return nil, err
@@ -86,7 +129,7 @@ func (r *userRepository) FindByEmail(ctx context.Context, email string) (*entity
 	if err != nil {
 		if err == sql.ErrNoRows {
 			log.Warn().Err(err).Str("email", email).Msg("repo::FindByEmail - User not found")
-			return nil, errmsg.NewCustomErrors(400, errmsg.WithMessage("Email atau password salah"))
+			return nil, errmsg.NewCustomErrors(400, errmsg.WithMessage("Wrong email or password"))
 		}
 		log.Error().Err(err).Str("email", email).Msg("repo::FindByEmail - Failed to get user")
 		return nil, err
@@ -114,7 +157,7 @@ func (r *userRepository) FindById(ctx context.Context, id string) (*entity.Profi
 	if err != nil {
 		if err == sql.ErrNoRows {
 			log.Warn().Err(err).Str("id", id).Msg("repo::FindById - User not found")
-			return nil, errmsg.NewCustomErrors(400, errmsg.WithMessage("User tidak ditemukan"))
+			return nil, errmsg.NewCustomErrors(400, errmsg.WithMessage("User not found"))
 		}
 
 		log.Error().Err(err).Str("id", id).Msg("repo::FindById - Failed to get user")
@@ -122,4 +165,20 @@ func (r *userRepository) FindById(ctx context.Context, id string) (*entity.Profi
 	}
 
 	return res, nil
+}
+
+func (r *userRepository) UpdateRefreshToken(ctx context.Context, userId, refreshToken string) error {
+	query := `
+		UPDATE users
+		SET refresh_token = ?
+		WHERE id = ?
+	`
+
+	_, err := r.db.ExecContext(ctx, r.db.Rebind(query), refreshToken, userId)
+	if err != nil {
+		log.Error().Err(err).Str("userId", userId).Msg("repo::UpdateRefreshToken - Failed to update refresh token")
+		return err
+	}
+
+	return nil
 }

@@ -1,10 +1,18 @@
 package entity
 
 type RegisterRequest struct {
-	Email          string `json:"email" validate:"required,email"`
-	Name           string `json:"name" validate:"required"`
-	Password       string `json:"password,omitempty"`
+	Email    string `json:"email" validate:"required,email"`
+	Name     string `json:"name" validate:"required"`
+	Password string `json:"password" validate:"required"`
 	HassedPassword string
+}
+
+type RegisterByGoogleRequest struct {
+	Email          	string `json:"email" validate:"required,email"`
+	Name           	string `json:"name" validate:"required"`
+	GoogleId		string `json:"id"`			
+	Password       	string `json:"password,omitempty"`
+	HassedPassword 	string
 }
 
 type RegisterResponse struct {
@@ -18,7 +26,8 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	Token string `json:"token"`
+	AccessToken		string	`json:"accessToken"`
+	RefreshToken	string	`json:"refreshToken"`
 }
 
 type ProfileRequest struct {
