@@ -1,0 +1,54 @@
+# https://taskfile.dev
+
+version: '3'
+
+dotenv: ['.env']
+
+vars:
+  GREETING: Hello, World!
+
+tasks:
+  default:
+    cmds:
+      - echo "{{.GREETING}}"
+    silent: true
+  migrate:
+    cmds:
+      - migrate -path db/migrations -database "postgres://${HACKO_POSTGRES_USER}:${HACKO_POSTGRES_PASSWORD}@${HACKO_POSTGRES_HOST}:${HACKO_POSTGRES_PORT}/${HACKO_POSTGRES_DB}?sslmode=${HACKO_POSTGRES_SSL_MODE}" {{.cmd}}
+  create-migration:
+    cmds:
+      - migrate create -ext sql -dir db/migrations/ {{.name}} -tz UTC
+  seed:
+    cmds:
+      - go run ./cmd/bin/main.go seed -total={{.total}} -table={{.table}}
+  dev:
+    cmds:
+      - go run ./cmd/bin/main.go
+  ws:
+    cmds:
+      - go run ./cmd/bin/main.go ws --port=8080
+  build:
+    cmds:
+      - go build -o ./hacko-app ./cmd/bin/main.go
+  build-dev:
+    cmds:
+      - git pull
+      - go build -o ./hacko-app ./cmd/bin/main.go
+      - immortalctl stop hacko-dev
+      # - immortalctl halt hacko-dev
+      - mv ./hacko-app ../binaries/hacko-dev
+      # - immortal -c ../binaries/hacko-dev/hacko-dev.yaml
+      - immortalctl start hacko-dev
+      - immortalctl status
+  lint-fix:
+    cmds:
+      - gofmt -w .
+  lint-ci:
+    cmds:
+      - golangci-lint run
+  commit:
+    cmds:
+      - task lint-fix
+      - task lint-ci
+      - git add .
+      - git commit -m "{{.msg}}"
