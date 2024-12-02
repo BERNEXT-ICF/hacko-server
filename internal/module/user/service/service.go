@@ -60,7 +60,8 @@ func (s *userService) Login(ctx context.Context, req *entity.LoginRequest) (*ent
 		return nil, errmsg.NewCustomErrors(401, errmsg.WithMessage("Email atau password salah"))
 	}
 
-	token, err := jwthandler.GenerateTokenString(jwthandler.CostumClaimsPayload{
+	// Generate Access Token
+	accessToken, err := jwthandler.GenerateTokenString(jwthandler.CostumClaimsPayload{
 		UserId:          user.Id,
 		Role:            user.Role,
 		TokenExpiration: time.Now().Add(time.Hour * 24),
@@ -69,9 +70,29 @@ func (s *userService) Login(ctx context.Context, req *entity.LoginRequest) (*ent
 		return nil, err
 	}
 
-	res.Token = token
+	// Generate Refresh Token
+	refreshToken, err := jwthandler.GenerateTokenString(jwthandler.CostumClaimsPayload{
+		UserId:          user.Id,
+		Role:            user.Role,
+		TokenExpiration: time.Now().Add(time.Hour * 7 * 24), // Expire in 7 days
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Update Refresh Token in Database
+	if err := s.repo.UpdateRefreshToken(ctx, user.Id, refreshToken); err != nil {
+		log.Error().Err(err).Str("userId", user.Id).Msg("service::Login - Failed to update refresh token")
+		return nil, errmsg.NewCustomErrors(500, errmsg.WithMessage("Gagal menyimpan refresh token"))
+	}
+
+	// Set Tokens in Response
+	res.AccessToken = accessToken
+	res.RefreshToken = refreshToken
+
 	return res, nil
 }
+
 
 func (s *userService) Profile(ctx context.Context, req *entity.ProfileRequest) (*entity.ProfileResponse, error) {
 	user, err := s.repo.FindById(ctx, req.UserId)
@@ -133,7 +154,7 @@ func (s *userService) LoginGoogle(ctx context.Context, req *oauthgoogleent.UserI
 		}
 	}
 
-	token, err := jwthandler.GenerateTokenString(jwthandler.CostumClaimsPayload{
+	accessToken, err := jwthandler.GenerateTokenString(jwthandler.CostumClaimsPayload{
 		UserId:          user.Id,
 		Role:            user.Role,
 		TokenExpiration: time.Now().Add(time.Hour * 24),
@@ -143,6 +164,6 @@ func (s *userService) LoginGoogle(ctx context.Context, req *oauthgoogleent.UserI
 		return nil, err
 	}
 
-	res.Token = token
+	res.AccessToken = accessToken
 	return res, nil
 }

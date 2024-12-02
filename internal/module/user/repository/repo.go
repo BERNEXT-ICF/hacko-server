@@ -123,3 +123,19 @@ func (r *userRepository) FindById(ctx context.Context, id string) (*entity.Profi
 
 	return res, nil
 }
+
+func (r *userRepository) UpdateRefreshToken(ctx context.Context, userId, refreshToken string) error {
+	query := `
+		UPDATE users
+		SET refresh_token = ?
+		WHERE id = ?
+	`
+
+	_, err := r.db.ExecContext(ctx, r.db.Rebind(query), refreshToken, userId)
+	if err != nil {
+		log.Error().Err(err).Str("userId", userId).Msg("repo::UpdateRefreshToken - Failed to update refresh token")
+		return err
+	}
+
+	return nil
+}
