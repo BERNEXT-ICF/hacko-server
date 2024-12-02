@@ -83,7 +83,7 @@ func (s *userService) Login(ctx context.Context, req *entity.LoginRequest) (*ent
 	// Update Refresh Token in Database
 	if err := s.repo.UpdateRefreshToken(ctx, user.Id, refreshToken); err != nil {
 		log.Error().Err(err).Str("userId", user.Id).Msg("service::Login - Failed to update refresh token")
-		return nil, errmsg.NewCustomErrors(500, errmsg.WithMessage("Gagal menyimpan refresh token"))
+		return nil, errmsg.NewCustomErrors(500, errmsg.WithMessage("Failed to save refresh token"))
 	}
 
 	// Set Tokens in Response
@@ -160,11 +160,29 @@ func (s *userService) LoginGoogle(ctx context.Context, req *oauthgoogleent.UserI
 		Role:            user.Role,
 		TokenExpiration: time.Now().Add(time.Hour * 24),
 	})
+
 	if err != nil {
-		log.Error().Err(err).Msg("service::loginGoogle - Failed to generate tokens")
+		log.Error().Err(err).Msg("service::loginGoogle - Failed to generate access tokens")
 		return nil, err
 	}
 
+	refreshToken, err := jwthandler.GenerateTokenString(jwthandler.CostumClaimsPayload{
+		UserId:          user.Id,
+		Role:            user.Role,
+		TokenExpiration: time.Now().Add(time.Hour * 24),
+	})
+
+	if err != nil {
+		log.Error().Err(err).Msg("service::loginGoogle - Failed to generate refresh tokens")
+		return nil, err
+	}
+
+	if err := s.repo.UpdateRefreshToken(ctx, user.Id, refreshToken); err != nil {
+		log.Error().Err(err).Str("userId", user.Id).Msg("service::Login - Failed to update refresh token")
+		return nil, errmsg.NewCustomErrors(500, errmsg.WithMessage("Failed to save refresh token"))
+	}
+
 	res.AccessToken = accessToken
+	res.RefreshToken = refreshToken
 	return res, nil
 }
