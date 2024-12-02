@@ -1,12 +1,10 @@
 package rest
 
 import (
-	"encoding/json"
 	"fmt"
 	"hacko-app/internal/adapter"
 	"hacko-app/internal/infrastructure/config"
 	integOauth "hacko-app/internal/integration/oauth2google"
-	oauth "hacko-app/internal/integration/oauth2google/entity"
 	"hacko-app/internal/middleware"
 	"hacko-app/internal/module/user/entity"
 
@@ -192,22 +190,12 @@ func (h *userHandler) callbackSigninGoogle(c *fiber.Ctx) error {
 		return c.Status(code).JSON(response.Error(errs))
 	}
 
-	// Ambil informasi pengguna dari Google
-	userInfoResp, err := http.Get("https://www.googleapis.com/oauth2/v2/userinfo?access_token=" + token.AccessToken)
+	userInfo, err := h.integration.GetUserInfo(ctx, token)
 	if err != nil {
 		code, errs := errmsg.Errors[error](err)
 		return c.Status(code).JSON(response.Error(errs))
 	}
-	defer userInfoResp.Body.Close()
 
-	var userInfo oauth.UserInfoResponse
-	if err := json.NewDecoder(userInfoResp.Body).Decode(&userInfo); err != nil {
-		code, errs := errmsg.Errors[error](err)
-		return c.Status(code).JSON(response.Error(errs))
-	}
-
-	// Proses login di backend
-	// res, err := h.service.LoginGoogle(ctx, &userInfo)
 	if _, err := h.service.LoginGoogle(ctx, &userInfo); err != nil {
 		code, errs := errmsg.Errors[error](err)
 		return c.Status(code).JSON(response.Error(errs))
