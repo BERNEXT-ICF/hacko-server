@@ -120,7 +120,7 @@ func (h *userHandler) login(c *fiber.Ctx) error {
 		Value:    accessToken,
 		Expires:  time.Now().Add(20 * time.Minute), // Validity period 20 minutes
 		HTTPOnly: true,
-		Secure:   true, 
+		Secure:   true,
 		SameSite: "Lax",
 	})
 
@@ -128,7 +128,7 @@ func (h *userHandler) login(c *fiber.Ctx) error {
 	c.Cookie(&fiber.Cookie{
 		Name:     "refreshToken",
 		Value:    refreshToken,
-		Expires:  time.Now().Add(14 * 24 * time.Hour),  // Validity period 14 days
+		Expires:  time.Now().Add(14 * 24 * time.Hour), // Validity period 14 days
 		HTTPOnly: true,
 		Secure:   true,
 		SameSite: "Lax",
@@ -181,10 +181,10 @@ func (h *userHandler) profile(c *fiber.Ctx) error {
 }
 
 func (h *userHandler) oauthGoogleUrl(c *fiber.Ctx) error {
-	referer := c.Get("Referer") 
-    if referer == "" {
+	referer := c.Get("Referer")
+	if referer == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(response.Error(errmsg.NewCustomErrors(400, errmsg.WithMessage("Invalid request: Referer is missing from the request headers"))))
-    }
+	}
 	return c.Redirect(h.integration.GetUrl(referer), http.StatusTemporaryRedirect)
 }
 
@@ -224,10 +224,34 @@ func (h *userHandler) callbackSigninGoogle(c *fiber.Ctx) error {
 		return c.Status(code).JSON(response.Error(errs))
 	}
 
-	if _, err := h.service.LoginGoogle(ctx, &userInfo); err != nil {
+	res, err := h.service.LoginGoogle(ctx, &userInfo)
+	if err != nil {
 		code, errs := errmsg.Errors[error](err)
 		return c.Status(code).JSON(response.Error(errs))
 	}
+
+	accessToken := res.AccessToken
+	refreshToken := res.RefreshToken
+
+	// Set cookie for accessToken
+	c.Cookie(&fiber.Cookie{
+		Name:     "accessToken",
+		Value:    accessToken,
+		Expires:  time.Now().Add(20 * time.Minute), // Validity period 20 minutes
+		HTTPOnly: true,
+		Secure:   true,
+		SameSite: "Lax",
+	})
+
+	// Set cookie for refreshToken
+	c.Cookie(&fiber.Cookie{
+		Name:     "refreshToken",
+		Value:    refreshToken,
+		Expires:  time.Now().Add(14 * 24 * time.Hour), // Validity period 14 days
+		HTTPOnly: true,
+		Secure:   true,
+		SameSite: "Lax",
+	})
 
 	// Dekode URL state
 	redirectURL, err := url.QueryUnescape(state)
@@ -239,7 +263,3 @@ func (h *userHandler) callbackSigninGoogle(c *fiber.Ctx) error {
 	finalRedirect := fmt.Sprintf("%s/dashboard", redirectURL)
 	return c.Redirect(finalRedirect, fiber.StatusTemporaryRedirect)
 }
-
-// Convert dari PRD ke user story
-// Jelaskan diagram dan alur based on user story
-// Jelaskan based on diagram
