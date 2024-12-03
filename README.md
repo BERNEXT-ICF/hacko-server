@@ -9,7 +9,7 @@ Backend system for the Learning Management System (LMS) project. This system is 
 - **Programming Language:** Go  
 - **Framework:** Fiber (for REST APIs)  
 - **Database:** PostgreSQL  
-- **JWT:** Authentication  
+- **Authentication:** OAuth  
 - **ORM:** No ORM ORM Gang 
 - **Logging:** Zerolog
 
