@@ -51,8 +51,8 @@ func (h *userHandler) Register(router fiber.Router) {
 	router.Get("/signin/callback", h.callbackSigninGoogle)
 
 	// route user service
-	router.Get("/profile", middleware.AuthMiddleware, middleware.AuthRole([]string{"user"}), h.profile)
-	router.Get("/profile/:user_id", middleware.AuthBearer, h.profileByUserId)
+	router.Get("/profile", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "teacher"}), h.profile)
+	router.Get("/profile/:user_id", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.profileByUserId)
 }
 
 func (h *userHandler) register(c *fiber.Ctx) error {
