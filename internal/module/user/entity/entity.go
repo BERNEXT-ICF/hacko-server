@@ -33,7 +33,7 @@ type LoginResponse struct {
 }
 
 type ProfileRequest struct {
-	UserId string `validate:"validate"`
+	UserId string `validate:"required"`
 }
 
 type ProfileResponse struct {

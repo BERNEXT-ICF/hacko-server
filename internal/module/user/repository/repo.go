@@ -162,7 +162,7 @@ func (r *userRepository) FindById(ctx context.Context, id string) (*entity.Profi
 		}
 
 		log.Error().Err(err).Str("id", id).Msg("repo::FindById - Failed to get user")
-		return nil, err
+		return nil,  errmsg.NewCustomErrors(400, errmsg.WithMessage("The ID you entered is invalid"))
 	}
 
 	return res, nil
