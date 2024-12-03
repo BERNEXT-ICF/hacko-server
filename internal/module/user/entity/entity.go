@@ -41,3 +41,7 @@ type ProfileResponse struct {
 	Email string `json:"email" db:"email"`
 	Role  string `json:"-" db:"role"`
 }
+
+type RefreshTokenRequest struct{
+	
+}

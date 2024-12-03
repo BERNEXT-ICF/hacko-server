@@ -187,3 +187,7 @@ func (s *userService) LoginGoogle(ctx context.Context, req *oauthgoogleent.UserI
 	res.RefreshToken = refreshToken
 	return res, nil
 }
+
+func (s *userService) RefreshTokenService(ctx context.Context, refreshToken string){
+
+}
