@@ -44,11 +44,15 @@ func NewUserHandler(o integOauth.Oauth2googleContract) *userHandler {
 func (h *userHandler) Register(router fiber.Router) {
 	router.Post("/register", h.register)
 	router.Post("/login", h.login)
-	router.Get("/profile", middleware.AuthMiddleware, middleware.AuthRole([]string{"user"}), h.profile)
-	router.Get("/profile/:user_id", middleware.AuthBearer, h.profileByUserId)
+	router.Post("/refresh", h.refresh)
 
+	// route login || register by google
 	router.Get("/oauth/google/url", h.oauthGoogleUrl)
 	router.Get("/signin/callback", h.callbackSigninGoogle)
+
+	// route user service
+	router.Get("/profile", middleware.AuthMiddleware, middleware.AuthRole([]string{"user"}), h.profile)
+	router.Get("/profile/:user_id", middleware.AuthBearer, h.profileByUserId)
 }
 
 func (h *userHandler) register(c *fiber.Ctx) error {
@@ -259,7 +263,49 @@ func (h *userHandler) callbackSigninGoogle(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(response.Error("Invalid state parameter"))
 	}
 
-	// Redirect ke halaman frontend dengan path dashboard
+	// Redirect to frontend with path dashboard
 	finalRedirect := fmt.Sprintf("%s/dashboard", redirectURL)
 	return c.Redirect(finalRedirect, fiber.StatusTemporaryRedirect)
+}
+
+func (h *userHandler) refresh(c *fiber.Ctx) error {
+	var ctx = c.Context()
+	refreshToken := c.Cookies("refreshToken")
+
+	
+	if refreshToken == "" {
+		log.Warn().Msg("handler::refresh - Refresh token not provided")
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Unauthorized: Refresh token not provided",
+			"success": false,
+		})
+	}
+
+	// service refresh token
+	accessToken, err := h.service.RefreshTokenService(ctx, refreshToken)
+	if err != nil {
+		log.Error().Err(err).Msg("handler::refresh - Error while refreshing token")
+		if customErr, ok := err.(*errmsg.CustomError); ok {
+			return c.Status(customErr.Code).JSON(fiber.Map{
+				"message": customErr.Msg,
+				"success": false,
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Internal server error",
+			"success": false,
+		})
+	}
+
+	c.Cookie(&fiber.Cookie{
+		Name:     "accessToken",
+		Value:    accessToken,
+		Expires:  time.Now().Add(20 * time.Minute), // Validity period 20 minutes
+		HTTPOnly: true,
+		Secure:   true,
+		SameSite: "Lax",
+	})
+
+	return c.Status(fiber.StatusOK).JSON(response.Success(nil, "Refresh access token successful"))
+
 }

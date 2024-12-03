@@ -93,7 +93,6 @@ func (s *userService) Login(ctx context.Context, req *entity.LoginRequest) (*ent
 	return res, nil
 }
 
-
 func (s *userService) Profile(ctx context.Context, req *entity.ProfileRequest) (*entity.ProfileResponse, error) {
 	user, err := s.repo.FindById(ctx, req.UserId)
 	if err != nil {
@@ -122,9 +121,9 @@ func (s *userService) LoginGoogle(ctx context.Context, req *oauthgoogleent.UserI
 				registerReq := &entity.RegisterByGoogleRequest{
 					Email:          req.Email,
 					Name:           req.Name,
-					GoogleId: 		req.Id,
-					ImageUrl: 		*req.PicURL,
-					Password:       "", 
+					GoogleId:       req.Id,
+					ImageUrl:       *req.PicURL,
+					Password:       "",
 					HassedPassword: "",
 				}
 
@@ -143,7 +142,6 @@ func (s *userService) LoginGoogle(ctx context.Context, req *oauthgoogleent.UserI
 				return nil, err
 			}
 		} else if pqErr, ok := err.(*pq.Error); ok {
-			
 			switch pqErr.Code.Name() {
 			case "unique_violation":
 				log.Warn().Msg("service::loginGoogle - Unique violations, no additional actions")
@@ -159,7 +157,7 @@ func (s *userService) LoginGoogle(ctx context.Context, req *oauthgoogleent.UserI
 	accessToken, err := jwthandler.GenerateTokenString(jwthandler.CostumClaimsPayload{
 		UserId:          user.Id,
 		Role:            user.Role,
-		TokenExpiration: time.Now().Add(time.Hour * 24),
+		TokenExpiration: time.Now().Add(20 * time.Minute), // Validity period 20 minutes
 	})
 
 	if err != nil {
@@ -170,7 +168,7 @@ func (s *userService) LoginGoogle(ctx context.Context, req *oauthgoogleent.UserI
 	refreshToken, err := jwthandler.GenerateTokenString(jwthandler.CostumClaimsPayload{
 		UserId:          user.Id,
 		Role:            user.Role,
-		TokenExpiration: time.Now().Add(time.Hour * 24),
+		TokenExpiration: time.Now().Add(14 * 24 * time.Hour), // Validity period 14 days
 	})
 
 	if err != nil {
@@ -188,6 +186,21 @@ func (s *userService) LoginGoogle(ctx context.Context, req *oauthgoogleent.UserI
 	return res, nil
 }
 
-func (s *userService) RefreshTokenService(ctx context.Context, refreshToken string){
+func (s *userService) RefreshTokenService(ctx context.Context, refreshToken string) (string, error) {
+	payload, err := s.repo.FindRefreshToken(ctx, refreshToken)
+	if err != nil {
+		return "", err
+	}
 
+	accessToken, err := jwthandler.GenerateTokenString(jwthandler.CostumClaimsPayload{
+		UserId:          payload.UserID,
+		Role:            payload.Role,
+		TokenExpiration: time.Now().Add(20 * time.Minute), // Validity period 20 minutes
+	})
+	if err != nil {
+		log.Error().Err(err).Msg("service::RefreshTokenService - Failed to generate access token")
+		return "", errmsg.NewCustomErrors(500, errmsg.WithMessage("Failed to generate access token"))
+	}
+
+	return accessToken, nil
 }
