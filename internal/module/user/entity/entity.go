@@ -24,7 +24,7 @@ type RegisterResponse struct {
 type LoginRequest struct {
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required"`
-	Remember bool	
+	Remember bool	`json:"remember"`
 }
 
 type LoginResponse struct {

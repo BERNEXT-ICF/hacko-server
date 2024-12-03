@@ -115,24 +115,21 @@ func (h *userHandler) login(c *fiber.Ctx) error {
 		return c.Status(code).JSON(response.Error(errs))
 	}
 
-	accessToken := res.AccessToken
-	refreshToken := res.RefreshToken
-
 	// Set cookie for accessToken
 	c.Cookie(&fiber.Cookie{
 		Name:     "accessToken",
-		Value:    accessToken,
+		Value:    res.AccessToken,
 		Expires:  time.Now().Add(20 * time.Minute), // Validity period 20 minutes
 		HTTPOnly: true,
 		Secure:   true,
 		SameSite: "Lax",
 	})
 
-	// Set cookie for refreshToken if remember true
-	if req.Remember == true {
+	// Only set refresh token cookie if req.Remember is true
+	if req.Remember {
 		c.Cookie(&fiber.Cookie{
 			Name:     "refreshToken",
-			Value:    refreshToken,
+			Value:    res.RefreshToken,
 			Expires:  time.Now().Add(14 * 24 * time.Hour), // Validity period 14 days
 			HTTPOnly: true,
 			Secure:   true,
