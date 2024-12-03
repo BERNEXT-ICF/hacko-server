@@ -2,8 +2,10 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"hacko-app/internal/module/class/entity"
 	"hacko-app/internal/module/class/ports"
+	"hacko-app/pkg/errmsg"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
@@ -80,10 +82,10 @@ func (r *classRepository) GetAllClasses(ctx context.Context) (*entity.GetAllClas
 	}
 	defer rows.Close()
 
-	var classes []entity.GetAllClassResponse
+	var classes []entity.GetClassResponse
 
 	for rows.Next() {
-		var class entity.GetAllClassResponse
+		var class entity.GetClassResponse
 		err := rows.Scan(
 			&class.ID,
 			&class.Title,
@@ -114,3 +116,43 @@ func (r *classRepository) GetAllClasses(ctx context.Context) (*entity.GetAllClas
 
 	return response, nil
 }
+
+func (r *classRepository) GetClassById(ctx context.Context, req *entity.GetClassByIdRequest) (*entity.GetClassResponse, error) {
+	var res = new(entity.GetClassResponse)
+
+	query := `
+		SELECT 
+			id,
+			creator_class_id,
+			title,
+			description,
+			image,
+			video,
+			status,
+			created_at,
+			updated_at
+		FROM class
+		WHERE id = ?
+	`
+
+	err := r.db.GetContext(ctx, res, r.db.Rebind(query), req.Id)
+
+	if err != nil {
+		log.Error().
+			Err(err).
+			Str("classId", req.Id).
+			Msg("repo::GetClassById - Failed to retrieve class by ID")
+
+		if err == sql.ErrNoRows {
+			log.Warn().
+				Str("classId", req.Id).
+				Msg("repo::GetClassById - No class found with the provided ID")
+			return nil, errmsg.NewCustomErrors(400, errmsg.WithMessage("Class not found"))
+		}
+
+		return nil, err
+	}
+
+	return res, nil
+}
+

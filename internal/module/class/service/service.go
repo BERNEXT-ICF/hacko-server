@@ -41,3 +41,12 @@ func (s *classService) GetAllClasses(ctx context.Context) (*entity.GetAllClasses
 	return classes, nil
 }
 
+func (s *classService) GetClassById(ctx context.Context, req *entity.GetClassByIdRequest) (*entity.GetClassResponse, error) {
+	class, err := s.repo.GetClassById(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return class, nil
+}
+

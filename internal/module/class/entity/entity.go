@@ -20,20 +20,23 @@ type CreateClassResponse struct {
 	UpdatedAt string `json:"updated_at"`
 }
 
-type GetAllClassResponse struct {
-	ID             int       `json:"id"`
-	Title          string    `json:"title"`
-	Description    string    `json:"description,omitempty"`
-	Image          string    `json:"image,omitempty"`
-	Video          string    `json:"video,omitempty"`
-	Status         string    `json:"status"`
-	CreatorClassID string    `json:"creator_class_id"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+type GetClassResponse struct {
+	ID             int       `json:"id" db:"id"`
+	Title          string    `json:"title" db:"title"`
+	Description    string    `json:"description,omitempty" db:"description"`
+	Image          string    `json:"image,omitempty" db:"image"`
+	Video          string    `json:"video,omitempty" db:"video"`
+	Status         string    `json:"status" db:"status"`
+	CreatorClassID string    `json:"creator_class_id" db:"creator_class_id"` 
+	CreatedAt      time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at" db:"updated_at"`
+}
+type GetAllClassesResponse struct {
+	Classes []GetClassResponse `json:"classes"`
+	Total   int                `json:"total"`
 }
 
-// GetAllClassesResponse represents the response for fetching multiple classes.
-type GetAllClassesResponse struct {
-	Classes []GetAllClassResponse `json:"classes"`
-	Total   int                   `json:"total"`
+type GetClassByIdRequest struct {
+	Id string `json:"id"`
 }
+
