@@ -45,6 +45,7 @@ func (h *userHandler) Register(router fiber.Router) {
 	router.Post("/register", h.register)
 	router.Post("/login", h.login)
 	router.Post("/refresh", h.refresh)
+	router.Delete("/logout", h.logout)
 
 	// route login || register by google
 	router.Get("/oauth/google/url", h.oauthGoogleUrl)
@@ -305,5 +306,26 @@ func (h *userHandler) refresh(c *fiber.Ctx) error {
 	})
 
 	return c.Status(fiber.StatusOK).JSON(response.Success(nil, "Refresh access token successful"))
+}
 
+func (h *userHandler) logout(c *fiber.Ctx) error {
+	c.Cookie(&fiber.Cookie{
+		Name:     "accessToken",
+		Value:    "",
+		HTTPOnly: true,
+		Secure:   true,
+		SameSite: "None",
+		Expires:  time.Now().Add(-time.Hour), 
+	})
+
+	c.Cookie(&fiber.Cookie{
+		Name:     "refreshToken",
+		Value:    "",
+		HTTPOnly: true,
+		Secure:   true,
+		SameSite: "None",
+		Expires:  time.Now().Add(-time.Hour), 
+	})
+
+	return c.Status(fiber.StatusOK).JSON(response.Success(nil, "Successfully logged out"))
 }
