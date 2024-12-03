@@ -1,6 +1,8 @@
 package jwthandler
 
 import (
+	"errors"
+	"fmt"
 	"hacko-app/internal/infrastructure/config"
 	"time"
 
@@ -34,6 +36,10 @@ func GenerateTokenString(payload CostumClaimsPayload) (string, error) {
 func ParseTokenString(tokenString string) (*CustomClaims, error) {
 	claims := &CustomClaims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			log.Error().Msgf("jwthandler::ParseTokenString - Unexpected signing method: %v", token.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
 		return []byte(config.Envs.Guard.JwtPrivateKey), nil
 	})
 	if err != nil {
@@ -43,8 +49,9 @@ func ParseTokenString(tokenString string) (*CustomClaims, error) {
 
 	if !token.Valid {
 		log.Error().Msg("jwthandler::ParseTokenString - Invalid token")
-		return nil, err
+		return nil, errors.New("invalid token")
 	}
 
 	return claims, nil
 }
+

@@ -183,3 +183,35 @@ func (r *userRepository) UpdateRefreshToken(ctx context.Context, userId, refresh
 
 	return nil
 }
+
+func (r *userRepository) FindRefreshToken(ctx context.Context, refreshToken string) (*entity.UserPayload, error) {
+	var userPayload = new(entity.UserPayload)
+
+	query := `
+		SELECT
+			refresh_token,
+			id,
+			role
+		FROM
+			users
+		WHERE
+			refresh_token = ? 
+	`
+
+	err := r.db.GetContext(ctx, userPayload, r.db.Rebind(query), refreshToken)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			log.Warn().Err(err).Str("refreshToken", refreshToken).Msg("repo::FindRefreshToken - Refresh token not found")
+			return nil, errmsg.NewCustomErrors(400, errmsg.WithMessage("Refresh token not found"))
+		}
+
+		log.Error().Err(err).Str("refreshToken", refreshToken).Msg("repo::FindRefreshToken - Failed to retrieve refresh token")
+		return nil, err
+	}
+
+	if userPayload.RefreshToken != refreshToken {
+		return nil, errmsg.NewCustomErrors(400, errmsg.WithMessage("Invalid refresh token"))
+	}
+
+	return userPayload, nil
+}

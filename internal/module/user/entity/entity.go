@@ -41,3 +41,9 @@ type ProfileResponse struct {
 	Email string `json:"email" db:"email"`
 	Role  string `json:"-" db:"role"`
 }
+
+type UserPayload struct {
+	RefreshToken string `json:"refresh_token" db:"refresh_token"`
+	UserID       string `json:"user_id" db:"id"`
+	Role         string `json:"role" db:"role"`
+}
