@@ -44,7 +44,7 @@ func NewUserHandler(o integOauth.Oauth2googleContract) *userHandler {
 func (h *userHandler) Register(router fiber.Router) {
 	router.Post("/register", h.register)
 	router.Post("/login", h.login)
-	router.Get("/profile", middleware.AuthBearer, h.profile)
+	router.Get("/profile", middleware.AuthMiddleware, h.profile)
 	router.Get("/profile/:user_id", middleware.AuthBearer, h.profileByUserId)
 
 	router.Get("/oauth/google/url", h.oauthGoogleUrl)

@@ -8,14 +8,12 @@ import (
 )
 
 func AuthMiddleware(c *fiber.Ctx) error {
-	// Get the access_token cookie
-	cookie := c.Cookies("access_token")
+	cookie := c.Cookies("accessToken")
 
-	// If the cookie is not set, return an unauthorized status
 	if cookie == "" {
-		log.Error().Msg("middleware::AuthMiddleware - Unauthorized [Cookie not set]")
+		log.Warn().Msg("middleware::AuthMiddleware - Unauthorized [Token not found in cookie]")
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"message": "Unauthorized",
+			"message": "Unauthorized: Access token not found",
 			"success": false,
 		})
 	}
@@ -23,15 +21,17 @@ func AuthMiddleware(c *fiber.Ctx) error {
 	// Parse the JWT string and store the result in `claims`
 	claims, err := jwthandler.ParseTokenString(cookie)
 	if err != nil {
-		log.Error().Err(err).Msg("middleware::AuthMiddleware - Error while parsing token")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Bad request",
+
+		log.Error().Err(err).Msg("middleware::AuthMiddleware - Invalid token")
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Unauthorized: Invalid token",
 			"success": false,
 		})
 	}
 
 	c.Locals("user_id", claims.UserId)
+	c.Locals("role", claims.Role)
 
-	// If the token is valid, pass the request to the next handler
 	return c.Next()
 }
+
