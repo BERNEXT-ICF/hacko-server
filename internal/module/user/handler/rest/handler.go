@@ -7,6 +7,7 @@ import (
 	integOauth "hacko-app/internal/integration/oauth2google"
 	"hacko-app/internal/middleware"
 	"hacko-app/internal/module/user/entity"
+	"time"
 
 	"hacko-app/internal/module/user/ports"
 	"hacko-app/internal/module/user/repository"
@@ -90,24 +91,51 @@ func (h *userHandler) login(c *fiber.Ctx) error {
 		v   = adapter.Adapters.Validator
 	)
 
+	// Parsing request body
 	if err := c.BodyParser(req); err != nil {
 		log.Warn().Err(err).Msg("handler::login - Failed to parse request body")
 		return c.Status(fiber.StatusBadRequest).JSON(response.Error(err))
 	}
 
+	// Validasi request body
 	if err := v.Validate(req); err != nil {
 		log.Warn().Err(err).Msg("handler::login - Invalid request body")
 		code, errs := errmsg.Errors(err, req)
 		return c.Status(code).JSON(response.Error(errs))
 	}
 
+	// Memanggil service untuk login
 	res, err := h.service.Login(ctx, req)
 	if err != nil {
 		code, errs := errmsg.Errors[error](err)
 		return c.Status(code).JSON(response.Error(errs))
 	}
 
-	return c.Status(fiber.StatusOK).JSON(response.Success(res, ""))
+	accessToken := res.AccessToken
+	refreshToken := res.RefreshToken
+
+	// Set cookie for accessToken
+	c.Cookie(&fiber.Cookie{
+		Name:     "accessToken",
+		Value:    accessToken,
+		Expires:  time.Now().Add(20 * time.Minute), // Validity period 20 minutes
+		HTTPOnly: true,
+		Secure:   true, 
+		SameSite: "Lax",
+	})
+
+	// Set cookie for refreshToken
+	c.Cookie(&fiber.Cookie{
+		Name:     "refreshToken",
+		Value:    refreshToken,
+		Expires:  time.Now().Add(14 * 24 * time.Hour),  // Validity period 14 days
+		HTTPOnly: true,
+		Secure:   true,
+		SameSite: "Lax",
+	})
+
+	// Return response without token
+	return c.Status(fiber.StatusOK).JSON(response.Success(nil, "Login successful"))
 }
 
 func (h *userHandler) profileByUserId(c *fiber.Ctx) error {

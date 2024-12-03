@@ -5,11 +5,18 @@ import "hacko-app/pkg/errmsg"
 type Response map[string]any
 
 func Success(data any, message string) Response {
-	// msg := "Your request has been successfully processed"
-	msg := "Permintaan anda berhasil diproses"
+	msg := "Your request has been successfully processed"
 	if message != "" {
 		msg = message
 	}
+
+	if data == nil {
+		return Response{
+			"success": true,
+			"message": msg,
+		}
+	}
+
 	return Response{
 		"success": true,
 		"message": msg,
@@ -30,8 +37,7 @@ func Error(errorMsg any) Response {
 		return Response{
 			"success": false,
 			"errors":  errorMsg,
-			// "message": "Your request has been failed to process",
-			"message": "Permintaan anda gagal diproses",
+			"message": "Your request failed to be processed",
 		}
 	}
 
@@ -53,7 +59,6 @@ func Error(errorMsg any) Response {
 
 	return Response{
 		"success": false,
-		// "message": "Your request has been failed to process",
-		"message": "Permintaan anda gagal diproses",
+		"message": "Your request failed to be processed",
 	}
 }

@@ -64,7 +64,7 @@ func (s *userService) Login(ctx context.Context, req *entity.LoginRequest) (*ent
 	accessToken, err := jwthandler.GenerateTokenString(jwthandler.CostumClaimsPayload{
 		UserId:          user.Id,
 		Role:            user.Role,
-		TokenExpiration: time.Now().Add(time.Hour * 24),
+		TokenExpiration: time.Now().Add(20 * time.Minute), // Validity period 20 minutes
 	})
 	if err != nil {
 		return nil, err
@@ -74,7 +74,7 @@ func (s *userService) Login(ctx context.Context, req *entity.LoginRequest) (*ent
 	refreshToken, err := jwthandler.GenerateTokenString(jwthandler.CostumClaimsPayload{
 		UserId:          user.Id,
 		Role:            user.Role,
-		TokenExpiration: time.Now().Add(time.Hour * 7 * 24), // Expire in 7 days
+		TokenExpiration: time.Now().Add(14 * 24 * time.Hour), // Validity period 14 days
 	})
 	if err != nil {
 		return nil, err
