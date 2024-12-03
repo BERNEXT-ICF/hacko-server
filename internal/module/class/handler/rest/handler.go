@@ -6,6 +6,7 @@ import (
 	"hacko-app/internal/module/class/ports"
 	"hacko-app/internal/module/class/repository"
 	"hacko-app/internal/module/class/service"
+	"hacko-app/internal/middleware"
 	"hacko-app/pkg/errmsg"
 	"hacko-app/pkg/response"
 
@@ -29,7 +30,7 @@ func NewClassHandler() *classHandler {
 }
 
 func (h *classHandler) Register(router fiber.Router) {
-	router.Post("/class", h.CreateClassregister)
+	router.Post("/class", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.CreateClassregister)
 	router.Get("/class", h.GetAllClasses)
 	router.Get("/class/:id", h.GetClassById)
 }
@@ -38,9 +39,12 @@ func (h *classHandler) CreateClassregister(c *fiber.Ctx) error {
 	var(
 		req = new(entity.CreateClassRequest)
 		ctx = c.Context()
-		v   = adapter.Adapters.Validator
+		v   = adapter.Adapters.Validator  
+		l = middleware.GetLocals(c)
 	)
 
+	req.UserId = l.GetUserId()
+	
 	if err := c.BodyParser(req); err != nil {
 		log.Warn().Err(err).Msg("handler::login - Failed to parse request body")
 		return c.Status(fiber.StatusBadRequest).JSON(response.Error(err))
