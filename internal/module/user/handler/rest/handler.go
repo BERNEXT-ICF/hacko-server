@@ -128,15 +128,17 @@ func (h *userHandler) login(c *fiber.Ctx) error {
 		SameSite: "Lax",
 	})
 
-	// Set cookie for refreshToken
-	c.Cookie(&fiber.Cookie{
-		Name:     "refreshToken",
-		Value:    refreshToken,
-		Expires:  time.Now().Add(14 * 24 * time.Hour), // Validity period 14 days
-		HTTPOnly: true,
-		Secure:   true,
-		SameSite: "Lax",
-	})
+	// Set cookie for refreshToken if remember true
+	if req.Remember == true {
+		c.Cookie(&fiber.Cookie{
+			Name:     "refreshToken",
+			Value:    refreshToken,
+			Expires:  time.Now().Add(14 * 24 * time.Hour), // Validity period 14 days
+			HTTPOnly: true,
+			Secure:   true,
+			SameSite: "Lax",
+		})
+	}
 
 	// Return response without token
 	return c.Status(fiber.StatusOK).JSON(response.Success(nil, "Login successful"))
@@ -272,7 +274,6 @@ func (h *userHandler) refresh(c *fiber.Ctx) error {
 	var ctx = c.Context()
 	refreshToken := c.Cookies("refreshToken")
 
-	
 	if refreshToken == "" {
 		log.Warn().Msg("handler::refresh - Refresh token not provided")
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{

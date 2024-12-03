@@ -13,14 +13,20 @@ func AuthMiddleware(c *fiber.Ctx) error {
 	if cookie == "" {
 		log.Warn().Msg("middleware::AuthMiddleware - Unauthorized [Token not found in cookie]")
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"message": "Unauthorized: Access token not found",
+			"message": "Unauthorized: Token expired",
 			"success": false,
 		})
 	}
 
-	// Parse the JWT string and store the result in `claims`
 	claims, err := jwthandler.ParseTokenString(cookie)
 	if err != nil {
+		if jwthandler.IsTokenExpired(err) {
+			log.Warn().Msg("middleware::AuthMiddleware - Token expired")
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"message": "Unauthorized: Token expired",
+				"success": false,
+			})
+		}
 
 		log.Error().Err(err).Msg("middleware::AuthMiddleware - Invalid token")
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -34,4 +40,3 @@ func AuthMiddleware(c *fiber.Ctx) error {
 
 	return c.Next()
 }
-

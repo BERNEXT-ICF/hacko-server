@@ -55,3 +55,6 @@ func ParseTokenString(tokenString string) (*CustomClaims, error) {
 	return claims, nil
 }
 
+func IsTokenExpired(err error) bool {
+	return errors.Is(err, jwt.ErrTokenExpired)
+}
