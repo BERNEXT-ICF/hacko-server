@@ -56,3 +56,61 @@ func (r *classRepository) CreateClass(ctx context.Context, req *entity.CreateCla
 	return res, nil
 }
 
+func (r *classRepository) GetAllClasses(ctx context.Context) (*entity.GetAllClassesResponse, error) {
+
+	query := `
+		SELECT 
+			id,
+			title,
+			description,
+			image,
+			video,
+			status,
+			creator_class_id,
+			created_at,
+			updated_at
+		FROM 
+			class
+	`
+
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		log.Error().Err(err).Msg("repo::GetAllClasses - Failed to execute query")
+		return nil, err
+	}
+	defer rows.Close()
+
+	var classes []entity.GetAllClassResponse
+
+	for rows.Next() {
+		var class entity.GetAllClassResponse
+		err := rows.Scan(
+			&class.ID,
+			&class.Title,
+			&class.Description,
+			&class.Image,
+			&class.Video,
+			&class.Status,
+			&class.CreatorClassID,
+			&class.CreatedAt,
+			&class.UpdatedAt,
+		)
+		if err != nil {
+			log.Error().Err(err).Msg("repo::GetAllClasses - Failed to scan row")
+			return nil, err
+		}
+		classes = append(classes, class)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Error().Err(err).Msg("repo::GetAllClasses - Error occurred during rows iteration")
+		return nil, err
+	}
+
+	response := &entity.GetAllClassesResponse{
+		Classes: classes,
+		Total:   len(classes),
+	}
+
+	return response, nil
+}

@@ -30,6 +30,7 @@ func NewClassHandler() *classHandler {
 
 func (h *classHandler) Register(router fiber.Router) {
 	router.Post("/class", h.CreateClassregister)
+	router.Get("/class", h.GetAllClasses)
 }
 
 func (h *classHandler) CreateClassregister(c *fiber.Ctx) error {
@@ -57,4 +58,16 @@ func (h *classHandler) CreateClassregister(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(response.Success(res, ""))
+}
+
+func (h *classHandler) GetAllClasses(c *fiber.Ctx) error {
+	var ctx = c.Context()
+
+	classes, err := h.service.GetAllClasses(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("handler::GetAllClasses - Failed to get classes from service")
+		return c.Status(fiber.StatusInternalServerError).JSON(response.Error(err))
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response.Success(classes, "Successfully retrieved all classes"))
 }

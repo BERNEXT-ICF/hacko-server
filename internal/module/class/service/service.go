@@ -4,7 +4,6 @@ import (
 	"context"
 	"hacko-app/internal/module/class/entity"
 	"hacko-app/internal/module/class/ports"
-	"hacko-app/pkg/errmsg"
 
 	"github.com/rs/zerolog/log"
 )
@@ -26,9 +25,19 @@ func (s *classService) CreateClass(ctx context.Context, req *entity.CreateClassR
 	result, err := s.repo.CreateClass(ctx, req)
 	if err != nil {
 		log.Error().Err(err).Any("payload", req).Msg("service::CreateClass - Failed to create class")
-		return nil, errmsg.NewCustomErrors(500, errmsg.WithMessage("Creator id not found"))
+		return nil, err
 	}
 
 	return result, nil
+}
+
+func (s *classService) GetAllClasses(ctx context.Context) (*entity.GetAllClassesResponse, error) {
+	classes, err := s.repo.GetAllClasses(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("service::GetAllClasses - Failed to retrieve classes from repository")
+		return nil, err
+	}
+
+	return classes, nil
 }
 
