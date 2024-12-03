@@ -3,7 +3,7 @@ package entity
 import "time"
 
 type CreateClassRequest struct {
-	UserId      string `json:"user_id" validate:"required"`
+	UserId      string `validate:"required"`
 	Title       string `json:"title" validate:"required"`
 	Description string `json:"description"`
 	Image       string `json:"image"`
@@ -27,7 +27,7 @@ type GetClassResponse struct {
 	Image          string    `json:"image,omitempty" db:"image"`
 	Video          string    `json:"video,omitempty" db:"video"`
 	Status         string    `json:"status" db:"status"`
-	CreatorClassID string    `json:"creator_class_id" db:"creator_class_id"` 
+	CreatorClassID string    `json:"creator_class_id" db:"creator_class_id"`
 	CreatedAt      time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at" db:"updated_at"`
 }
@@ -39,4 +39,3 @@ type GetAllClassesResponse struct {
 type GetClassByIdRequest struct {
 	Id string `json:"id"`
 }
-
