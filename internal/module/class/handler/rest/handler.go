@@ -33,6 +33,8 @@ func (h *classHandler) Register(router fiber.Router) {
 	router.Post("/class", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.CreateClassregister)
 	router.Get("/class", h.GetAllClasses)
 	router.Get("/class/:id", h.GetClassById)
+
+	router.Post("/class/enroll", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.EnrollClass)
 }
 
 func (h *classHandler) CreateClassregister(c *fiber.Ctx) error {
@@ -91,4 +93,36 @@ func (h *classHandler) GetClassById(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(response.Success(res, ""))
+}
+
+func (h *classHandler) EnrollClass(c *fiber.Ctx) error {
+	var(
+		req = new(entity.EnrollClassRequest)
+		ctx = c.Context()
+		v   = adapter.Adapters.Validator  
+		l = middleware.GetLocals(c)
+	)
+
+	req.UserId = l.GetUserId()
+
+	// Mendapatkan parameter dari request (misalnya user_id dan class_id)
+	if err := c.BodyParser(req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(response.Error(errmsg.NewCustomErrors(400, errmsg.WithMessage("Invalid request body"))))
+	}
+
+	if err := v.Validate(req); err != nil {
+		log.Warn().Err(err).Msg("handler::login - Invalid request body")
+		code, errs := errmsg.Errors(err, req)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	// Memanggil service untuk melakukan pendaftaran kelas
+	err := h.service.EnrollClass(ctx, req)
+	if err != nil {
+		// Jika terjadi kesalahan dalam service, kembalikan response error
+		return c.Status(fiber.StatusInternalServerError).JSON(response.Error("Class id not found"))
+	}
+
+	// Mengembalikan response sukses jika pendaftaran berhasil
+	return c.Status(fiber.StatusOK).JSON(response.Success(nil, "Successfully enrolled in the class"))
 }

@@ -50,3 +50,12 @@ func (s *classService) GetClassById(ctx context.Context, req *entity.GetClassByI
 	return class, nil
 }
 
+func (s *classService) EnrollClass(ctx context.Context, req *entity.EnrollClassRequest) error {
+	err := s.repo.EnrollClass(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
