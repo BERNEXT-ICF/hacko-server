@@ -34,7 +34,7 @@ func (s *userService) Register(ctx context.Context, req *entity.RegisterRequest)
 	hashed, err := pkg.HashPassword(req.Password)
 	if err != nil {
 		log.Error().Err(err).Any("payload", req).Msg("service::Register - Failed to hash password")
-		return nil, errmsg.NewCustomErrors(500, errmsg.WithMessage("Gagal menghash password"))
+		return nil, errmsg.NewCustomErrors(500, errmsg.WithMessage("Failed to hash password"))
 	}
 
 	req.HassedPassword = hashed
@@ -57,7 +57,7 @@ func (s *userService) Login(ctx context.Context, req *entity.LoginRequest) (*ent
 
 	if !pkg.ComparePassword(user.Pass, req.Password) {
 		log.Warn().Any("payload", req).Msg("service::Login - Password not match")
-		return nil, errmsg.NewCustomErrors(401, errmsg.WithMessage("Email atau password salah"))
+		return nil, errmsg.NewCustomErrors(401, errmsg.WithMessage("Wrong email or password"))
 	}
 
 	// Generate Access Token
@@ -67,7 +67,7 @@ func (s *userService) Login(ctx context.Context, req *entity.LoginRequest) (*ent
 		TokenExpiration: time.Now().Add(20 * time.Minute), // Validity period 20 minutes
 	})
 	if err != nil {
-		return nil, err
+		return nil, errmsg.NewCustomErrors(500, errmsg.WithMessage("Failed generate access token"))
 	}
 
 	// Generate Refresh Token
@@ -77,13 +77,13 @@ func (s *userService) Login(ctx context.Context, req *entity.LoginRequest) (*ent
 		TokenExpiration: time.Now().Add(14 * 24 * time.Hour), // Validity period 14 days
 	})
 	if err != nil {
-		return nil, err
+		return nil, errmsg.NewCustomErrors(500, errmsg.WithMessage("Failed generate refresh token"))
 	}
 
 	// Update Refresh Token in Database
 	if err := s.repo.UpdateRefreshToken(ctx, user.Id, refreshToken); err != nil {
 		log.Error().Err(err).Str("userId", user.Id).Msg("service::Login - Failed to update refresh token")
-		return nil, errmsg.NewCustomErrors(500, errmsg.WithMessage("Failed to save refresh token"))
+		return nil, err
 	}
 
 	// Set Tokens in Response
@@ -100,7 +100,6 @@ func (s *userService) Profile(ctx context.Context, req *entity.ProfileRequest) (
 	}
 
 	return user, nil
-
 }
 
 func (s *userService) GetOauthGoogleUrl(ctx context.Context) (string, error) {
@@ -127,10 +126,10 @@ func (s *userService) LoginGoogle(ctx context.Context, req *oauthgoogleent.UserI
 					HassedPassword: "",
 				}
 
-				_, regErr := s.repo.RegisterByGoogle(ctx, registerReq)
-				if regErr != nil {
-					log.Error().Err(regErr).Msg("service::loginGoogle - Failed to register a new user")
-					return nil, regErr
+				_, err := s.repo.RegisterByGoogle(ctx, registerReq)
+				if err != nil {
+					log.Error().Err(err).Msg("service::loginGoogle - Failed to register a new user")
+					return nil, err
 				}
 
 				user, err = s.repo.FindByEmail(ctx, req.Email)

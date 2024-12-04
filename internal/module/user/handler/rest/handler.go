@@ -68,12 +68,6 @@ func (h *userHandler) register(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(response.Error(err))
 	}
 
-	// 	because the entity password RegisterRequest is optional, for login & register google
-	if req.Password == "" {
-		log.Warn().Msg("handler::register - Password is required")
-		return c.Status(fiber.StatusBadRequest).JSON(response.Error("Password is required"))
-	}
-
 	if err := v.Validate(req); err != nil {
 		log.Warn().Err(err).Msg("handler::register - Invalid request body")
 		code, errs := errmsg.Errors(err, req)
@@ -206,7 +200,7 @@ func (h *userHandler) callbackSigninGoogle(c *fiber.Ctx) error {
 		return c.Status(code).JSON(response.Error(errs))
 	}
 
-	// Verifikasi token dengan Google
+	// verify token with google
 	provider, err := oidc.NewProvider(ctx, "https://accounts.google.com")
 	if err != nil {
 		code, errs := errmsg.Errors[error](err)
@@ -283,17 +277,8 @@ func (h *userHandler) refresh(c *fiber.Ctx) error {
 	// service refresh token
 	accessToken, err := h.service.RefreshTokenService(ctx, refreshToken)
 	if err != nil {
-		log.Error().Err(err).Msg("handler::refresh - Error while refreshing token")
-		if customErr, ok := err.(*errmsg.CustomError); ok {
-			return c.Status(customErr.Code).JSON(fiber.Map{
-				"message": customErr.Msg,
-				"success": false,
-			})
-		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Internal server error",
-			"success": false,
-		})
+		code, errs := errmsg.Errors[error](err)
+		return c.Status(code).JSON(response.Error(errs))
 	}
 
 	c.Cookie(&fiber.Cookie{
@@ -315,7 +300,7 @@ func (h *userHandler) logout(c *fiber.Ctx) error {
 		HTTPOnly: true,
 		Secure:   true,
 		SameSite: "None",
-		Expires:  time.Now().Add(-time.Hour), 
+		Expires:  time.Now().Add(-time.Hour),
 	})
 
 	c.Cookie(&fiber.Cookie{
@@ -324,7 +309,7 @@ func (h *userHandler) logout(c *fiber.Ctx) error {
 		HTTPOnly: true,
 		Secure:   true,
 		SameSite: "None",
-		Expires:  time.Now().Add(-time.Hour), 
+		Expires:  time.Now().Add(-time.Hour),
 	})
 
 	return c.Status(fiber.StatusOK).JSON(response.Success(nil, "Successfully logged out"))
