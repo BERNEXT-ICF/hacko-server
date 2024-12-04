@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS users (
     password VARCHAR(255),
     image_url TEXT,
     google_id VARCHAR(255),
-    refresh_token VARCHAR(255),
+    refresh_token VARCHAR(1024),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
     UNIQUE (email)
