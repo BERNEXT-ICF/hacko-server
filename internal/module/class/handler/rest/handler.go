@@ -120,7 +120,7 @@ func (h *classHandler) EnrollClass(c *fiber.Ctx) error {
 	err := h.service.EnrollClass(ctx, req)
 	if err != nil {
 		// Jika terjadi kesalahan dalam service, kembalikan response error
-		return c.Status(fiber.StatusInternalServerError).JSON(response.Error(err))
+		return c.Status(fiber.StatusInternalServerError).JSON(response.Error("Class id not found"))
 	}
 
 	// Mengembalikan response sukses jika pendaftaran berhasil

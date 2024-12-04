@@ -179,7 +179,7 @@ func (r *classRepository) EnrollClass(ctx context.Context, req *entity.EnrollCla
 	`
 	_, err = r.db.ExecContext(ctx, insertQuery, req.UserId, req.ClassId, "active")
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to enroll user in class")
+		log.Error().Err(err).Msg("repo::GetClassById - Failed to enroll user in class")
 		return err
 	}
 
