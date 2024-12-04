@@ -32,7 +32,7 @@ type GetClassResponse struct {
 	UpdatedAt      time.Time `json:"updated_at" db:"updated_at"`
 }
 type GetAllClassesResponse struct {
-	Classes []GetClassResponse `json:"classes"`
+	Classes []*GetClassResponse `json:"classes"`
 	Total   int                `json:"total"`
 }
 

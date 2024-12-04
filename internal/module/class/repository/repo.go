@@ -82,10 +82,10 @@ func (r *classRepository) GetAllClasses(ctx context.Context) (*entity.GetAllClas
 	}
 	defer rows.Close()
 
-	var classes []entity.GetClassResponse
+	var classes []*entity.GetClassResponse
 
 	for rows.Next() {
-		var class entity.GetClassResponse
+		class := new(entity.GetClassResponse)
 		err := rows.Scan(
 			&class.ID,
 			&class.Title,
@@ -103,7 +103,6 @@ func (r *classRepository) GetAllClasses(ctx context.Context) (*entity.GetAllClas
 		}
 		classes = append(classes, class)
 	}
-
 	if err := rows.Err(); err != nil {
 		log.Error().Err(err).Msg("repo::GetAllClasses - Error occurred during rows iteration")
 		return nil, err
@@ -147,7 +146,7 @@ func (r *classRepository) GetClassById(ctx context.Context, req *entity.GetClass
 			log.Warn().
 				Str("classId", req.Id).
 				Msg("repo::GetClassById - No class found with the provided ID")
-			return nil, errmsg.NewCustomErrors(400, errmsg.WithMessage("Class not found"))
+			return nil, errmsg.NewCustomErrors(400, errmsg.WithMessage("Class with the ID was not found"))
 		}
 
 		return nil, err

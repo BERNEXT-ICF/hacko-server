@@ -30,10 +30,10 @@ func NewClassHandler() *classHandler {
 }
 
 func (h *classHandler) Register(router fiber.Router) {
-	router.Post("/class", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.CreateClassregister)
 	router.Get("/class", h.GetAllClasses)
 	router.Get("/class/:id", h.GetClassById)
-
+	
+	router.Post("/class", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.CreateClassregister)
 	router.Post("/class/enroll", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.EnrollClass)
 }
 
@@ -80,16 +80,17 @@ func (h *classHandler) GetAllClasses(c *fiber.Ctx) error {
 }
 
 func (h *classHandler) GetClassById(c *fiber.Ctx) error {
+	var ctx = c.Context()
 	classId := c.Params("id")
 
 	req := &entity.GetClassByIdRequest{
 		Id: classId,
 	}
 
-	res, err := h.service.GetClassById(c.Context(), req)
+	res, err := h.service.GetClassById(ctx, req)
 	if err != nil {
-		log.Warn().Err(err).Msg("handler::GetClassById - Failed to get class by ID")
-		return c.Status(fiber.StatusInternalServerError).JSON(response.Error(err))
+		code, errs := errmsg.Errors[error](err)
+		return c.Status(code).JSON(response.Error(errs))
 	}
 
 	return c.Status(fiber.StatusOK).JSON(response.Success(res, ""))
@@ -105,7 +106,6 @@ func (h *classHandler) EnrollClass(c *fiber.Ctx) error {
 
 	req.UserId = l.GetUserId()
 
-	// Mendapatkan parameter dari request (misalnya user_id dan class_id)
 	if err := c.BodyParser(req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(response.Error(errmsg.NewCustomErrors(400, errmsg.WithMessage("Invalid request body"))))
 	}
@@ -116,13 +116,11 @@ func (h *classHandler) EnrollClass(c *fiber.Ctx) error {
 		return c.Status(code).JSON(response.Error(errs))
 	}
 
-	// Memanggil service untuk melakukan pendaftaran kelas
 	err := h.service.EnrollClass(ctx, req)
 	if err != nil {
-		// Jika terjadi kesalahan dalam service, kembalikan response error
-		return c.Status(fiber.StatusInternalServerError).JSON(response.Error("Class id not found"))
+		code, errs := errmsg.Errors(err, req)
+		return c.Status(code).JSON(response.Error(errs))
 	}
 
-	// Mengembalikan response sukses jika pendaftaran berhasil
 	return c.Status(fiber.StatusOK).JSON(response.Success(nil, "Successfully enrolled in the class"))
 }
