@@ -156,3 +156,32 @@ func (r *classRepository) GetClassById(ctx context.Context, req *entity.GetClass
 	return res, nil
 }
 
+func (r *classRepository) EnrollClass(ctx context.Context, req *entity.EnrollClassRequest) error {
+	var count int
+	query := `
+		SELECT COUNT(*) 
+		FROM users_classes 
+		WHERE user_id = $1 AND class_id = $2
+	`
+	err := r.db.QueryRowContext(ctx, query, req.UserId, req.ClassId).Scan(&count)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to check if user is already enrolled in class")
+		return err
+	}
+
+	if count > 0 {
+		return errmsg.NewCustomErrors(400, errmsg.WithMessage("User is already enrolled in the class"))
+	}
+
+	insertQuery := `
+		INSERT INTO users_classes (user_id, class_id, enrollment_status, created_at, updated_at)
+		VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+	`
+	_, err = r.db.ExecContext(ctx, insertQuery, req.UserId, req.ClassId, "active")
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to enroll user in class")
+		return err
+	}
+
+	return nil
+}

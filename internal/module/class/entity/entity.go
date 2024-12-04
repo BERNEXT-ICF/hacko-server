@@ -39,3 +39,8 @@ type GetAllClassesResponse struct {
 type GetClassByIdRequest struct {
 	Id string `json:"id"`
 }
+
+type EnrollClassRequest struct {
+	UserId      string `validate:"required"`
+	ClassId		int `json:"class_id"`
+}
