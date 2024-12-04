@@ -148,7 +148,7 @@ func (r *classRepository) GetClassById(ctx context.Context, req *entity.GetClass
 				Msg("repo::GetClassById - No class found with the provided ID")
 			return nil, errmsg.NewCustomErrors(400, errmsg.WithMessage("Class with the ID was not found"))
 		}
-
+		log.Error().Err(err).Str("ClassId", req.Id).Msg("repo::UpdateRefreshToken - Failed to get class by id")
 		return nil, err
 	}
 
@@ -178,8 +178,20 @@ func (r *classRepository) EnrollClass(ctx context.Context, req *entity.EnrollCla
 	`
 	_, err = r.db.ExecContext(ctx, insertQuery, req.UserId, req.ClassId, "active")
 	if err != nil {
-		log.Error().Err(err).Msg("repo::GetClassById - Failed to enroll user in class")
-		return err
+		pqErr, ok := err.(*pq.Error)
+		if !ok {
+			log.Error().Err(err).Any("payload", req).Msg("repo::EnrollClass - Failed to enroll user")
+			return err
+		}
+
+		switch pqErr.Code.Name() {
+		case "foreign_key_violation":
+			log.Warn().Msg("repo::EnrollClass - Class with the id not found")
+			return errmsg.NewCustomErrors(409, errmsg.WithMessage("Class with that id was not found"))
+		default:
+			log.Error().Err(err).Any("payload", req).Msg("repo::EnrollClass - Unhandled pq.Error")
+			return err
+		}
 	}
 
 	return nil
