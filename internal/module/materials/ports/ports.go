@@ -8,10 +8,11 @@ import (
 type MaterialsRepository interface {
 	CreateMaterials(ctx context.Context, req *entity.CreateMaterialsRequest) (*entity.CreateMaterialsResponse, error)
 	UpdateMaterials(ctx context.Context, req *entity.UpdateMaterialsRequest) (*entity.UpdateMaterialsResponse, error)
-
+	DeleteMaterials(ctx context.Context, req *entity.DeleteMaterialsRequest) error
 }
 
 type MaterialsService interface {
 	CreateMaterials(ctx context.Context, req *entity.CreateMaterialsRequest) (*entity.CreateMaterialsResponse, error)
 	UpdateMaterials(ctx context.Context, req *entity.UpdateMaterialsRequest) (*entity.UpdateMaterialsResponse, error)
+	DeleteMaterials(ctx context.Context, req *entity.DeleteMaterialsRequest) error
 }

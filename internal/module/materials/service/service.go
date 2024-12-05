@@ -37,3 +37,13 @@ func (s *materialsService) UpdateMaterials(ctx context.Context, req *entity.Upda
 
 	return res, nil
 }
+
+func (s *materialsService) DeleteMaterials(ctx context.Context, req *entity.DeleteMaterialsRequest) error {
+
+	err := s.repo.DeleteMaterials(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

@@ -99,3 +99,25 @@ func (r *materialsRepository) UpdateMaterials(ctx context.Context, req *entity.U
 
 	return res, nil
 }
+
+func (r *materialsRepository) DeleteMaterials(ctx context.Context, req *entity.DeleteMaterialsRequest) error {
+	query := `
+		DELETE FROM materials
+		WHERE id = $1 AND creator_materials_id = $2
+		RETURNING id
+	`
+
+	var deletedMaterialId int
+	err := r.db.QueryRowContext(ctx, query, req.MaterialId, req.UserId).Scan(&deletedMaterialId)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Warn().Any("payload", req).Msg("repo::DeleteMaterials - Material with the given ID not found or user is not authorized")
+			return errmsg.NewCustomErrors(404, errmsg.WithMessage("Material not found or you are not authorized to delete it"))
+		}
+		log.Error().Err(err).Any("payload", req).Msg("repo::DeleteMaterials - Failed to delete material")
+		return err
+	}
+
+	return nil
+}
