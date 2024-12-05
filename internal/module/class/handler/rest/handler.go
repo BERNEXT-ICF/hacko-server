@@ -2,11 +2,11 @@ package handler
 
 import (
 	"hacko-app/internal/adapter"
+	"hacko-app/internal/middleware"
 	"hacko-app/internal/module/class/entity"
 	"hacko-app/internal/module/class/ports"
 	"hacko-app/internal/module/class/repository"
 	"hacko-app/internal/module/class/service"
-	"hacko-app/internal/middleware"
 	"hacko-app/pkg/errmsg"
 	"hacko-app/pkg/response"
 
@@ -31,22 +31,22 @@ func NewClassHandler() *classHandler {
 
 func (h *classHandler) Register(router fiber.Router) {
 	router.Get("/class", h.GetAllClasses)
-	router.Get("/class/:id", h.GetClassById)
-	
+	router.Get("/class/:id", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.GetOverviewClassById)
+
 	router.Post("/class", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.CreateClassregister)
 	router.Post("/class/enroll", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.EnrollClass)
 }
 
 func (h *classHandler) CreateClassregister(c *fiber.Ctx) error {
-	var(
+	var (
 		req = new(entity.CreateClassRequest)
 		ctx = c.Context()
-		v   = adapter.Adapters.Validator  
-		l = middleware.GetLocals(c)
+		v   = adapter.Adapters.Validator
+		l   = middleware.GetLocals(c)
 	)
 
 	req.UserId = l.GetUserId()
-	
+
 	if err := c.BodyParser(req); err != nil {
 		log.Warn().Err(err).Msg("handler::login - Failed to parse request body")
 		return c.Status(fiber.StatusBadRequest).JSON(response.Error(err))
@@ -79,15 +79,17 @@ func (h *classHandler) GetAllClasses(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(response.Success(classes, "Successfully retrieved all classes"))
 }
 
-func (h *classHandler) GetClassById(c *fiber.Ctx) error {
+func (h *classHandler) GetOverviewClassById(c *fiber.Ctx) error {
 	var ctx = c.Context()
 	classId := c.Params("id")
+	var l = middleware.GetLocals(c)
 
-	req := &entity.GetClassByIdRequest{
-		Id: classId,
+	req := &entity.GetOverviewClassByIdRequest{
+		UserId: l.GetUserId(),
+		Id:     classId,
 	}
 
-	res, err := h.service.GetClassById(ctx, req)
+	res, err := h.service.GetOverviewClassById(ctx, req)
 	if err != nil {
 		code, errs := errmsg.Errors[error](err)
 		return c.Status(code).JSON(response.Error(errs))
@@ -97,11 +99,11 @@ func (h *classHandler) GetClassById(c *fiber.Ctx) error {
 }
 
 func (h *classHandler) EnrollClass(c *fiber.Ctx) error {
-	var(
+	var (
 		req = new(entity.EnrollClassRequest)
 		ctx = c.Context()
-		v   = adapter.Adapters.Validator  
-		l = middleware.GetLocals(c)
+		v   = adapter.Adapters.Validator
+		l   = middleware.GetLocals(c)
 	)
 
 	req.UserId = l.GetUserId()

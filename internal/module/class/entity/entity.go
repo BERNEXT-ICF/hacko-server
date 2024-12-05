@@ -33,14 +33,28 @@ type GetClassResponse struct {
 }
 type GetAllClassesResponse struct {
 	Classes []*GetClassResponse `json:"classes"`
-	Total   int                `json:"total"`
+	Total   int                 `json:"total"`
 }
 
-type GetClassByIdRequest struct {
-	Id string `json:"id"`
+type GetOverviewClassByIdRequest struct {
+	UserId string `validate:"required"`
+	Id     string `json:"id"`
+}
+
+type GetOverviewClassByIdResponse struct {
+	ID               int       `json:"id" db:"id"`
+	Title            string    `json:"title" db:"title"`
+	Description      string    `json:"description,omitempty" db:"description"`
+	Image            string    `json:"image,omitempty" db:"image"`
+	Video            string    `json:"video,omitempty" db:"video"`
+	Status           string    `json:"status" db:"status"`
+	EnrollmentStatus string    `json:"enrollment_status" db:"enrollment_status"`
+	CreatorClassID   string    `json:"creator_class_id" db:"creator_class_id"`
+	CreatedAt        time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at" db:"updated_at"`
 }
 
 type EnrollClassRequest struct {
-	UserId      string `validate:"required"`
-	ClassId		int `json:"class_id"`
+	UserId  string `validate:"required"`
+	ClassId int    `json:"class_id"`
 }

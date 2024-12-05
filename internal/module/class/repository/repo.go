@@ -116,39 +116,40 @@ func (r *classRepository) GetAllClasses(ctx context.Context) (*entity.GetAllClas
 	return response, nil
 }
 
-func (r *classRepository) GetClassById(ctx context.Context, req *entity.GetClassByIdRequest) (*entity.GetClassResponse, error) {
-	var res = new(entity.GetClassResponse)
+func (r *classRepository) GetOverviewClassById(ctx context.Context, req *entity.GetOverviewClassByIdRequest) (*entity.GetOverviewClassByIdResponse, error) {
+	var res = new(entity.GetOverviewClassByIdResponse)
 
 	query := `
 		SELECT 
-			id,
-			creator_class_id,
-			title,
-			description,
-			image,
-			video,
-			status,
-			created_at,
-			updated_at
-		FROM class
-		WHERE id = ?
+			c.id,
+			c.creator_class_id,
+			c.title,
+			c.description,
+			c.image,
+			c.video,
+			c.status,
+			c.created_at,
+			c.updated_at,
+			COALESCE(uc.enrollment_status, 'not_enrolled') AS enrollment_status
+		FROM class c
+		LEFT JOIN users_classes uc ON uc.class_id = c.id AND uc.user_id = ? 
+		WHERE c.id = ?
 	`
 
-	err := r.db.GetContext(ctx, res, r.db.Rebind(query), req.Id)
-
+	err := r.db.GetContext(ctx, res, r.db.Rebind(query), req.UserId, req.Id)
 	if err != nil {
 		log.Error().
 			Err(err).
 			Str("classId", req.Id).
-			Msg("repo::GetClassById - Failed to retrieve class by ID")
+			Msg("repo::GetOverviewClassById - Failed to retrieve class by ID")
 
 		if err == sql.ErrNoRows {
 			log.Warn().
 				Str("classId", req.Id).
-				Msg("repo::GetClassById - No class found with the provided ID")
+				Msg("repo::GetOverviewClassById - No class found with the provided ID")
 			return nil, errmsg.NewCustomErrors(400, errmsg.WithMessage("Class with the ID was not found"))
 		}
-		log.Error().Err(err).Str("ClassId", req.Id).Msg("repo::UpdateRefreshToken - Failed to get class by id")
+
 		return nil, err
 	}
 
