@@ -260,3 +260,33 @@ func (r *classRepository) DeleteClass(ctx context.Context, req *entity.DeleteCla
 
 	return nil
 }
+
+func (r *classRepository) UpdateVisibilityClass(ctx context.Context, req *entity.UpdateVisibilityClassRequest) (*entity.UpdateVisibilityClassResponse, error) {
+	var res = new(entity.UpdateVisibilityClassResponse)
+
+	query := `
+		UPDATE class
+		SET status = CASE 
+			WHEN status = 'public' THEN 'draf'
+			WHEN status = 'draf' THEN 'public'
+			ELSE status
+		END
+		WHERE id = $1 AND creator_class_id = $2
+		RETURNING id, title, status
+	`
+
+	err := r.db.GetContext(ctx, res, query, req.Id, req.UserId)
+	if err != nil {
+		log.Error().
+			Err(err).
+			Any("payload", req).
+			Msg("repo::UpdateVisibilityClass - Failed to update class visibility")
+
+		if err == sql.ErrNoRows {
+			return nil, errmsg.NewCustomErrors(404, errmsg.WithMessage("Class not found or unauthorized access"))
+		}
+		return nil, err
+	}
+
+	return res, nil
+}

@@ -41,6 +41,7 @@ func (h *classHandler) Register(router fiber.Router) {
 	router.Post("/class", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.CreateClassregister)
 	router.Put("/class/:id", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "teacher"}), h.UpdateClass)
 	router.Delete("/class/:id", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "teacher"}), h.DeleteClass)
+	router.Patch("/class/:id", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "teacher"}), h.UpdateVisibilityClass)
 }
 
 func (h *classHandler) CreateClassregister(c *fiber.Ctx) error {
@@ -209,4 +210,42 @@ func (h *classHandler) DeleteClass(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(response.Success(nil, "Delete Class Successful"))
+}
+
+func (h *classHandler) UpdateVisibilityClass(c *fiber.Ctx) error {
+	var (
+		req = new(entity.UpdateVisibilityClassRequest)
+		ctx = c.Context()
+		v   = adapter.Adapters.Validator
+		l   = middleware.GetLocals(c)
+	)
+
+	req.UserId = l.GetUserId()
+	id := c.Params("id")
+
+	reqId, err := strconv.Atoi(id)
+	if err != nil {
+		log.Warn().Err(err).Msg("handler::DeleteClass - Failed to parsing id class")
+		return c.Status(fiber.StatusInternalServerError).JSON(response.Error(errmsg.NewCustomErrors(500, errmsg.WithMessage("Failed to parse params id class"))))
+	}
+
+	req.Id = reqId
+
+	if err := c.BodyParser(req); err != nil {
+		log.Warn().Err(err).Msg("handler::DeleteClass - Failed to parsing body request")
+		return c.Status(fiber.StatusBadRequest).JSON(response.Error(errmsg.NewCustomErrors(400, errmsg.WithMessage("Invalid request body"))))
+	}
+
+	if err := v.Validate(req); err != nil {
+		log.Warn().Err(err).Msg("handler::DeleteClass - Invalid request body")
+		code, errs := errmsg.Errors(err, req)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+	res, err := h.service.UpdateVisibilityClass(ctx, req)
+	if err != nil {
+		code, errs := errmsg.Errors(err, req)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response.Success(res, ""))
 }

@@ -85,3 +85,14 @@ type DeleteClassRequest struct {
 	Id     int    `json:"id" validate:"required"`
 	UserId string `validate:"required"`
 }
+
+type UpdateVisibilityClassRequest struct {
+	Id     int    `json:"id" validate:"required"`
+	UserId string `validate:"required"`
+}
+
+type UpdateVisibilityClassResponse struct {
+	Id     int    `json:"id" db:"id"`
+	Title  string `json:"title" db:"title"`
+	Status string `json:"status" db:"status"`
+}

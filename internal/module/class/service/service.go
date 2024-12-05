@@ -76,3 +76,12 @@ func (s *classService) DeleteClass(ctx context.Context, req *entity.DeleteClassR
 
 	return nil
 }
+
+func (s *classService) UpdateVisibilityClass(ctx context.Context, req *entity.UpdateVisibilityClassRequest) (*entity.UpdateVisibilityClassResponse, error) {
+	res, err := s.repo.UpdateVisibilityClass(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
