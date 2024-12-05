@@ -43,7 +43,7 @@ func (r *userRepository) Register(ctx context.Context, req *entity.RegisterReque
 		pqErr, ok := err.(*pq.Error)
 		if !ok {
 			log.Error().Err(err).Any("payload", req).Msg("repo::Register - Failed to insert user")
-			return nil, err
+			return nil, errmsg.NewCustomErrors(500, errmsg.WithMessage("Failed to insert data"))
 		}
 
 		switch pqErr.Code.Name() {
@@ -158,11 +158,11 @@ func (r *userRepository) FindById(ctx context.Context, id string) (*entity.Profi
 	if err != nil {
 		if err == sql.ErrNoRows {
 			log.Warn().Err(err).Str("id", id).Msg("repo::FindById - User not found")
-			return nil, errmsg.NewCustomErrors(400, errmsg.WithMessage("User not found"))
+			return nil, errmsg.NewCustomErrors(401, errmsg.WithMessage("User not found"))
 		}
 
 		log.Error().Err(err).Str("id", id).Msg("repo::FindById - Failed to get user")
-		return nil,  errmsg.NewCustomErrors(400, errmsg.WithMessage("The ID you entered is invalid"))
+		return nil, errmsg.NewCustomErrors(400, errmsg.WithMessage("The ID you entered is invalid"))
 	}
 
 	return res, nil
@@ -178,7 +178,7 @@ func (r *userRepository) UpdateRefreshToken(ctx context.Context, userId, refresh
 	_, err := r.db.ExecContext(ctx, r.db.Rebind(query), refreshToken, userId)
 	if err != nil {
 		log.Error().Err(err).Str("userId", userId).Msg("repo::UpdateRefreshToken - Failed to update refresh token")
-		return err
+		return errmsg.NewCustomErrors(500, errmsg.WithMessage("Failed to save refresh token"))
 	}
 
 	return nil
@@ -189,7 +189,6 @@ func (r *userRepository) FindRefreshToken(ctx context.Context, refreshToken stri
 
 	query := `
 		SELECT
-			refresh_token,
 			id,
 			role
 		FROM
@@ -206,11 +205,7 @@ func (r *userRepository) FindRefreshToken(ctx context.Context, refreshToken stri
 		}
 
 		log.Error().Err(err).Str("refreshToken", refreshToken).Msg("repo::FindRefreshToken - Failed to retrieve refresh token")
-		return nil, err
-	}
-
-	if userPayload.RefreshToken != refreshToken {
-		return nil, errmsg.NewCustomErrors(400, errmsg.WithMessage("Invalid refresh token"))
+		return nil, errmsg.NewCustomErrors(500, errmsg.WithMessage("Failed to retrieve refresh token"))
 	}
 
 	return userPayload, nil

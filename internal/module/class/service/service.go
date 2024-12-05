@@ -41,8 +41,8 @@ func (s *classService) GetAllClasses(ctx context.Context) (*entity.GetAllClasses
 	return classes, nil
 }
 
-func (s *classService) GetClassById(ctx context.Context, req *entity.GetClassByIdRequest) (*entity.GetClassResponse, error) {
-	class, err := s.repo.GetClassById(ctx, req)
+func (s *classService) GetOverviewClassById(ctx context.Context, req *entity.GetOverviewClassByIdRequest) (*entity.GetOverviewClassByIdResponse, error) {
+	class, err := s.repo.GetOverviewClassById(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -59,3 +59,29 @@ func (s *classService) EnrollClass(ctx context.Context, req *entity.EnrollClassR
 	return nil
 }
 
+func (s *classService) UpdateClass(ctx context.Context, req *entity.UpdateClassRequest) (*entity.UpdateClassResponse, error) {
+	updatedClass, err := s.repo.UpdateClass(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return updatedClass, nil
+}
+
+func (s *classService) DeleteClass(ctx context.Context, req *entity.DeleteClassRequest) error {
+	err := s.repo.DeleteClass(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *classService) UpdateVisibilityClass(ctx context.Context, req *entity.UpdateVisibilityClassRequest) (*entity.UpdateVisibilityClassResponse, error) {
+	res, err := s.repo.UpdateVisibilityClass(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}

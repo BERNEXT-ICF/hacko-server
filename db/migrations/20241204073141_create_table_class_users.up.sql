@@ -3,7 +3,7 @@
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'enrollment_status') THEN
-        CREATE TYPE enrollment_status AS ENUM ('active', 'completed', 'dropped', 'removed');
+        CREATE TYPE enrollment_status AS ENUM ('not_enrolled', 'active', 'completed', 'dropped', 'removed');
     END IF;
 END
 $$;
