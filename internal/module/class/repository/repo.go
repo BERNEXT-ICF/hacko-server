@@ -255,7 +255,7 @@ func (r *classRepository) DeleteClass(ctx context.Context, req *entity.DeleteCla
 		log.Warn().
 			Any("payload", req).
 			Msg("repo::DeleteClass - No rows affected, invalid classId or userId")
-		return errmsg.NewCustomErrors(404, errmsg.WithMessage("Class not found or unauthorized"))
+		return errmsg.NewCustomErrors(404, errmsg.WithMessage("Class not found or unauthorized access"))
 	}
 
 	return nil
