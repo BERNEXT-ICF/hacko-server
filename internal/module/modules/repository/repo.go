@@ -143,3 +143,35 @@ func (r *modulesRepository) UpdateModules(ctx context.Context, req *entity.Updat
 	return res, nil
 }
 
+func (r *modulesRepository) DeleteModules(ctx context.Context, req *entity.DeleteModulesRequest) error {
+	query := `
+		DELETE FROM modules
+		WHERE 
+			id = $1 AND
+			creator_modules_id = $2
+	`
+
+	result, err := r.db.ExecContext(ctx, query, req.ModulesId, req.UserId)
+	if err != nil {
+		pqErr, ok := err.(*pq.Error)
+		if ok {
+			log.Error().Err(pqErr).Any("payload", req).Msg("repo::DeleteModules - Unhandled PostgreSQL error")
+			return err
+		}
+		log.Error().Err(err).Any("payload", req).Msg("repo::DeleteModules - Failed to delete module")
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		log.Error().Err(err).Any("payload", req).Msg("repo::DeleteModules - Failed to check affected rows")
+		return err
+	}
+
+	if rowsAffected == 0 {
+		log.Warn().Any("payload", req).Msg("repo::DeleteModules - No module found or unauthorized")
+		return errmsg.NewCustomErrors(404, errmsg.WithMessage("Module not found or you are not authorized to delete it"))
+	}
+
+	return nil
+}

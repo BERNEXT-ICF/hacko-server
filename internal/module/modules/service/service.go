@@ -37,3 +37,12 @@ func (s *modulesService) UpdateModules(ctx context.Context, req *entity.UpdateMo
 
 	return response, nil
 }
+
+func (s *modulesService) DeleteModules(ctx context.Context, req *entity.DeleteModulesRequest) error {
+	err := s.repo.DeleteModules(ctx, req)
+	if err != nil {
+		return  err
+	}
+
+	return nil
+}
