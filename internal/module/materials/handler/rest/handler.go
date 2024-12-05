@@ -135,11 +135,6 @@ func (h *materialsHandler) DeleteMaterials(c *fiber.Ctx) error{
 
 	req.MaterialId = reqMaterialId
 
-	if err := c.BodyParser(req); err != nil {
-		log.Warn().Err(err).Msg("handler::CreateMaterials - Failed to parse request body")
-		return c.Status(fiber.StatusBadRequest).JSON(response.Error(err))
-	}
-
 	if err := v.Validate(req); err != nil {
 		log.Warn().Err(err).Msg("handler::CreateMaterials - Invalid request body")
 		code, errs := errmsg.Errors(err, req)
