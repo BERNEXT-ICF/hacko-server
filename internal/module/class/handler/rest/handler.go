@@ -35,7 +35,7 @@ func (h *classHandler) Register(router fiber.Router) {
 	router.Get("/class/:id", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.GetOverviewClassById)
 
 	// route user
-	router.Post("/class/enroll", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.EnrollClass)
+	router.Post("/class/:id/enroll", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.EnrollClass)
 
 	// route teacher, manage class
 	router.Post("/class", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.CreateClassregister)
@@ -114,10 +114,15 @@ func (h *classHandler) EnrollClass(c *fiber.Ctx) error {
 	)
 
 	req.UserId = l.GetUserId()
+	id := c.Params("id")
 
-	if err := c.BodyParser(req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(response.Error(errmsg.NewCustomErrors(400, errmsg.WithMessage("Invalid request body"))))
+	classId, err := strconv.Atoi(id)
+	if err != nil {
+		log.Warn().Err(err).Msg("handler::UpdateClass - Failed to parsing id class")
+		return c.Status(fiber.StatusInternalServerError).JSON(response.Error(errmsg.NewCustomErrors(500, errmsg.WithMessage("Failed to parse params id class"))))
 	}
+
+	req.ClassId = classId
 
 	if err := v.Validate(req); err != nil {
 		log.Warn().Err(err).Msg("handler::EnrollClass - Invalid request body")
@@ -125,7 +130,7 @@ func (h *classHandler) EnrollClass(c *fiber.Ctx) error {
 		return c.Status(code).JSON(response.Error(errs))
 	}
 
-	err := h.service.EnrollClass(ctx, req)
+	err = h.service.EnrollClass(ctx, req)
 	if err != nil {
 		code, errs := errmsg.Errors(err, req)
 		return c.Status(code).JSON(response.Error(errs))

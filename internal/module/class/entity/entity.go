@@ -56,7 +56,7 @@ type GetOverviewClassByIdResponse struct {
 
 type EnrollClassRequest struct {
 	UserId  string `validate:"required"`
-	ClassId int    `json:"class_id"`
+	ClassId int    `json:"id"`
 }
 
 type UpdateClassRequest struct {
