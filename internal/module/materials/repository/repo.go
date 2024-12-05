@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"hacko-app/internal/module/materials/entity"
 	"hacko-app/internal/module/materials/ports"
 	"hacko-app/pkg/errmsg"
@@ -44,18 +46,55 @@ func (r *materialsRepository) CreateMaterials(ctx context.Context, req *entity.C
 	if err != nil {
 		pqErr, ok := err.(*pq.Error)
 		if !ok {
-			log.Error().Err(err).Any("payload", req).Msg("repo::CreateClass - Failed to insert class")
+			log.Error().Err(err).Any("payload", req).Msg("repo::CreateMaterials - Failed to insert class")
 			return nil, err
 		}
 
 		switch pqErr.Code.Name() {
 		case "foreign_key_violation":
-			log.Warn().Msg("repo::EnrollClass - Class with the id not found")
+			log.Warn().Msg("repo::CreateMaterials - Class with the id not found")
 			return nil, errmsg.NewCustomErrors(409, errmsg.WithMessage("Class with that id not found"))
 		default:
 			log.Error().Err(err).Any("payload", req).Msg("repo::EnrollClass - Unhandled pq.Error")
 			return nil, err
 		}
+	}
+
+	return res, nil
+}
+
+func (r *materialsRepository) UpdateMaterials(ctx context.Context, req *entity.UpdateMaterialsRequest) (*entity.UpdateMaterialsResponse, error) {
+	var res = new(entity.UpdateMaterialsResponse)
+
+	query := `
+		UPDATE materials
+		SET title = ?, updated_at = NOW()
+		WHERE id = ? AND creator_materials_id = ?
+		RETURNING id, title, created_at, updated_at
+	`
+
+	err := r.db.QueryRowContext(ctx, r.db.Rebind(query), req.Title, req.MaterialId, req.UserId).
+		Scan(&res.MaterialId, &res.Title, &res.CreatedAt, &res.UpdatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Warn().Any("payload", req).Msg("repo::UpdateMaterials - Material with the given ID not found or unauthorized")
+			return nil, errmsg.NewCustomErrors(404, errmsg.WithMessage("Material with the given ID not found or unauthorized"))
+		}
+
+		pqErr, ok := err.(*pq.Error)
+		if ok {
+			switch pqErr.Code.Name() {
+			case "foreign_key_violation":
+				log.Warn().Msg("repo::UpdateMaterials - Foreign key violation detected")
+				return nil, errmsg.NewCustomErrors(409, errmsg.WithMessage("Foreign key violation detected"))
+			default:
+				log.Error().Err(err).Any("payload", req).Msg("repo::UpdateMaterials - Unhandled pq.Error")
+				return nil, err
+			}
+		}
+
+		log.Error().Err(err).Any("payload", req).Msg("repo::UpdateMaterials - Unexpected error")
+		return nil, err
 	}
 
 	return res, nil

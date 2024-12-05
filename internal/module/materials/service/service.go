@@ -27,3 +27,13 @@ func (s *materialsService) CreateMaterials(ctx context.Context, req *entity.Crea
 
 	return result, nil
 }
+
+func (s *materialsService) UpdateMaterials(ctx context.Context, req *entity.UpdateMaterialsRequest) (*entity.UpdateMaterialsResponse, error) {
+
+	res, err := s.repo.UpdateMaterials(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
