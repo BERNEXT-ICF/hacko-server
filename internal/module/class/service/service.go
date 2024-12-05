@@ -85,3 +85,12 @@ func (s *classService) UpdateVisibilityClass(ctx context.Context, req *entity.Up
 
 	return res, nil
 }
+
+func (s *classService) GetAllUsersEnrolledClass(ctx context.Context, req *entity.GetAllUsersEnrolledClassRequest) (*entity.GetAllUsersEnrolledClassResponse, error) {
+	res, err := s.repo.GetAllUsersEnrolledClass(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}

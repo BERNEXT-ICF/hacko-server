@@ -42,6 +42,7 @@ func (h *classHandler) Register(router fiber.Router) {
 	router.Put("/class/:id", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "teacher"}), h.UpdateClass)
 	router.Delete("/class/:id", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "teacher"}), h.DeleteClass)
 	router.Patch("/class/:id", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "teacher"}), h.UpdateVisibilityClass)
+	router.Get("/class/:id/users", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "teacher"}), h.GetAllUsersEnrolledClass)
 }
 
 func (h *classHandler) CreateClassregister(c *fiber.Ctx) error {
@@ -238,6 +239,40 @@ func (h *classHandler) UpdateVisibilityClass(c *fiber.Ctx) error {
 	}
 
 	res, err := h.service.UpdateVisibilityClass(ctx, req)
+	if err != nil {
+		code, errs := errmsg.Errors(err, req)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response.Success(res, ""))
+}
+
+func (h *classHandler) GetAllUsersEnrolledClass(c *fiber.Ctx) error {
+	var (
+		req = new(entity.GetAllUsersEnrolledClassRequest)
+		ctx = c.Context()
+		v   = adapter.Adapters.Validator
+		l   = middleware.GetLocals(c)
+	)
+
+	req.UserId = l.GetUserId()
+	id := c.Params("id")
+
+	reqId, err := strconv.Atoi(id)
+	if err != nil {
+		log.Warn().Err(err).Msg("handler::GetAllUsersEnrolledClass - Failed to parsing id class")
+		return c.Status(fiber.StatusInternalServerError).JSON(response.Error(errmsg.NewCustomErrors(500, errmsg.WithMessage("Failed to parse params id class"))))
+	}
+
+	req.ClassId = reqId
+
+	if err := v.Validate(req); err != nil {
+		log.Warn().Err(err).Msg("handler::GetAllUsersEnrolledClass - Invalid request body")
+		code, errs := errmsg.Errors(err, req)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	res, err := h.service.GetAllUsersEnrolledClass(ctx, req)
 	if err != nil {
 		code, errs := errmsg.Errors(err, req)
 		return c.Status(code).JSON(response.Error(errs))

@@ -290,3 +290,50 @@ func (r *classRepository) UpdateVisibilityClass(ctx context.Context, req *entity
 
 	return res, nil
 }
+
+func (r *classRepository) GetAllUsersEnrolledClass(ctx context.Context, req *entity.GetAllUsersEnrolledClassRequest) (*entity.GetAllUsersEnrolledClassResponse, error) {
+	var response entity.GetAllUsersEnrolledClassResponse
+	var users []entity.GetUsersEnrolledClassResponse
+	var total int // Counter for rows
+
+	query := `
+		SELECT  
+			u.id AS user_id,
+			u.name AS name
+		FROM 
+			users AS u
+		INNER JOIN 
+			users_classes AS ce ON u.id = ce.user_id
+		INNER JOIN 
+			class AS c ON ce.class_id = c.id
+		WHERE 
+			ce.class_id = $1 AND c.creator_class_id = $2;
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, req.ClassId, req.UserId)
+	if err != nil {
+		log.Error().Err(err).Any("payload", req).Msg("repo::GetAllUsersEnrolledClass - Failed to fetch enrolled users")
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var user entity.GetUsersEnrolledClassResponse
+		if err := rows.Scan(&user.UserId, &user.Name); err != nil {
+			log.Error().Err(err).Msg("repo::GetAllUsersEnrolledClass - Failed to scan user data")
+			return nil, err
+		}
+		users = append(users, user)
+		total++ 
+	}
+
+	if rows.Err() != nil {
+		log.Error().Err(rows.Err()).Msg("repo::GetAllUsersEnrolledClass - Error while iterating rows")
+		return nil, rows.Err()
+	}
+
+	response.UsersEnrolled = users
+	response.Total = total
+
+	return &response, nil
+}
