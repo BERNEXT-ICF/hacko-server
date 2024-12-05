@@ -30,12 +30,17 @@ func NewClassHandler() *classHandler {
 }
 
 func (h *classHandler) Register(router fiber.Router) {
+	// route public
 	router.Get("/class", h.GetAllClasses)
 	router.Get("/class/:id", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.GetOverviewClassById)
 
+	// route user
+	router.Post("/class/enroll", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.EnrollClass)
+
+	// route teacher, manage class
 	router.Post("/class", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.CreateClassregister)
 	router.Put("/class/:id", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "teacher"}), h.UpdateClass)
-	router.Post("/class/enroll", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.EnrollClass)
+	router.Delete("/class/:id", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "teacher"}), h.DeleteClass)
 }
 
 func (h *classHandler) CreateClassregister(c *fiber.Ctx) error {
@@ -137,12 +142,13 @@ func (h *classHandler) UpdateClass(c *fiber.Ctx) error {
 	)
 
 	req.UserId = l.GetUserId()
-	id := c.Params("id") 
+	id := c.Params("id")
 
-    reqId, err := strconv.Atoi(id)
-    if err != nil {
+	reqId, err := strconv.Atoi(id)
+	if err != nil {
 		log.Warn().Err(err).Msg("handler::UpdateClass - Failed to parsing id class")
-		return c.Status(fiber.StatusInternalServerError).JSON(response.Error(errmsg.NewCustomErrors(500, errmsg.WithMessage("Failed to parse params id class"))))    }
+		return c.Status(fiber.StatusInternalServerError).JSON(response.Error(errmsg.NewCustomErrors(500, errmsg.WithMessage("Failed to parse params id class"))))
+	}
 
 	req.Id = reqId
 
@@ -164,4 +170,43 @@ func (h *classHandler) UpdateClass(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(res)
+}
+
+func (h *classHandler) DeleteClass(c *fiber.Ctx) error {
+	var (
+		req = new(entity.DeleteClassRequest)
+		ctx = c.Context()
+		v   = adapter.Adapters.Validator
+		l   = middleware.GetLocals(c)
+	)
+
+	req.UserId = l.GetUserId()
+	id := c.Params("id")
+
+	reqId, err := strconv.Atoi(id)
+	if err != nil {
+		log.Warn().Err(err).Msg("handler::DeleteClass - Failed to parsing id class")
+		return c.Status(fiber.StatusInternalServerError).JSON(response.Error(errmsg.NewCustomErrors(500, errmsg.WithMessage("Failed to parse params id class"))))
+	}
+
+	req.Id = reqId
+
+	if err := c.BodyParser(req); err != nil {
+		log.Warn().Err(err).Msg("handler::DeleteClass - Failed to parsing body request")
+		return c.Status(fiber.StatusBadRequest).JSON(response.Error(errmsg.NewCustomErrors(400, errmsg.WithMessage("Invalid request body"))))
+	}
+
+	if err := v.Validate(req); err != nil {
+		log.Warn().Err(err).Msg("handler::DeleteClass - Invalid request body")
+		code, errs := errmsg.Errors(err, req)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	err = h.service.DeleteClass(ctx, req)
+	if err != nil {
+		code, errs := errmsg.Errors(err, req)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response.Success(nil, "Delete Class Successful"))
 }

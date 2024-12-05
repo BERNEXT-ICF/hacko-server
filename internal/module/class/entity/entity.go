@@ -80,3 +80,8 @@ type UpdateClassResponse struct {
 	CreatedAt   time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
 }
+
+type DeleteClassRequest struct {
+	Id     int    `json:"id" validate:"required"`
+	UserId string `validate:"required"`
+}

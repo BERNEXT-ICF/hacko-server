@@ -227,3 +227,36 @@ func (r *classRepository) UpdateClass(ctx context.Context, req *entity.UpdateCla
 
 	return res, nil
 }
+
+func (r *classRepository) DeleteClass(ctx context.Context, req *entity.DeleteClassRequest) error {
+	query := `
+        DELETE FROM class
+        WHERE id = ? AND creator_class_id = ?
+    `
+
+	result, err := r.db.ExecContext(ctx, r.db.Rebind(query), req.Id, req.UserId)
+	if err != nil {
+		log.Error().
+			Err(err).
+			Any("payload", req).
+			Msg("repo::DeleteClass - Failed to delete class")
+		return errmsg.NewCustomErrors(500, errmsg.WithMessage("Failed to delete class"))
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		log.Error().
+			Err(err).
+			Msg("repo::DeleteClass - Failed to get rows affected")
+		return errmsg.NewCustomErrors(500, errmsg.WithMessage("Failed to process deletion"))
+	}
+
+	if rowsAffected == 0 {
+		log.Warn().
+			Any("payload", req).
+			Msg("repo::DeleteClass - No rows affected, invalid classId or userId")
+		return errmsg.NewCustomErrors(404, errmsg.WithMessage("Class not found or unauthorized"))
+	}
+
+	return nil
+}

@@ -67,3 +67,12 @@ func (s *classService) UpdateClass(ctx context.Context, req *entity.UpdateClassR
 
 	return updatedClass, nil
 }
+
+func (s *classService) DeleteClass(ctx context.Context, req *entity.DeleteClassRequest) error {
+	err := s.repo.DeleteClass(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
