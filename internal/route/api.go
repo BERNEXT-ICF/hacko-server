@@ -4,6 +4,7 @@ import (
 	integration "hacko-app/internal/integration/oauth2google"
 	restUser "hacko-app/internal/module/user/handler/rest"
 	restClass "hacko-app/internal/module/class/handler/rest"
+	restMaterials "hacko-app/internal/module/materials/handler/rest"
 	"hacko-app/pkg/response"
 
 	"github.com/gofiber/fiber/v2"
@@ -18,6 +19,7 @@ func SetupRoutes(app *fiber.App) {
 
 	restUser.NewUserHandler(googleOauth).Register(api)
 	restClass.NewClassHandler().Register(api)
+	restMaterials.NewMaterialsHandler().Register(api)
 
 	// fallback route
 	app.Use(func(c *fiber.Ctx) error {
