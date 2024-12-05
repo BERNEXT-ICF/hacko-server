@@ -197,3 +197,33 @@ func (r *classRepository) EnrollClass(ctx context.Context, req *entity.EnrollCla
 
 	return nil
 }
+
+func (r *classRepository) UpdateClass(ctx context.Context, req *entity.UpdateClassRequest) (*entity.UpdateClassResponse, error) {
+	var res = new(entity.UpdateClassResponse)
+
+	query := `
+		UPDATE class 
+		SET 
+			title = ?, 
+			description = ?, 
+			image = ?, 
+			video = ?, 
+			status = ?, 
+			updated_at = NOW() 
+		WHERE id = ? AND creator_class_id = ?
+		RETURNING id, title, description, image, video, status, created_at, updated_at, creator_class_id;
+	`
+
+	err := r.db.GetContext(ctx, res, r.db.Rebind(query), req.Title, req.Description, req.Image, req.Video, req.Status, req.Id, req.UserId)
+	if err != nil {
+		log.Error().Err(err).Any("payload", req).Msg("repo::UpdateClass - Failed to update class")
+		if err == sql.ErrNoRows {
+			log.Warn().
+				Msg("repo::UpdateClass - No class found with the provided ID")
+			return nil, errmsg.NewCustomErrors(400, errmsg.WithMessage("Class not found or you do not have update access to the class"))
+		}
+		return nil, err
+	}
+
+	return res, nil
+}

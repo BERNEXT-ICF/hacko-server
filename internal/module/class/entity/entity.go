@@ -58,3 +58,25 @@ type EnrollClassRequest struct {
 	UserId  string `validate:"required"`
 	ClassId int    `json:"class_id"`
 }
+
+type UpdateClassRequest struct {
+	Id          int    `json:"id" validate:"required"`
+	UserId      string `validate:"required"`
+	Title       string `json:"title" validate:"required"`
+	Description string `json:"description"`
+	Image       string `json:"image"`
+	Video       string `json:"video"`
+	Status      string `json:"status" validate:"required,oneof=public draf"`
+}
+
+type UpdateClassResponse struct {
+	Id          int       `json:"id" db:"id"`
+	UserId      string    `json:"creator_id" db:"creator_class_id"`
+	Title       string    `json:"title" db:"title"`
+	Description string    `json:"description"`
+	Image       string    `json:"image"`
+	Video       string    `json:"video"`
+	Status      string    `json:"status" validate:"required,oneof=public draf"`
+	CreatedAt   time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
+}

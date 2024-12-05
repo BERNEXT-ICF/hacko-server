@@ -9,6 +9,7 @@ import (
 	"hacko-app/internal/module/class/service"
 	"hacko-app/pkg/errmsg"
 	"hacko-app/pkg/response"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog/log"
@@ -18,7 +19,6 @@ type classHandler struct {
 	service ports.ClassService
 }
 
-// NewClassHandler creates a new instance of classHandler
 func NewClassHandler() *classHandler {
 	var handler = new(classHandler)
 
@@ -34,6 +34,7 @@ func (h *classHandler) Register(router fiber.Router) {
 	router.Get("/class/:id", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.GetOverviewClassById)
 
 	router.Post("/class", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.CreateClassregister)
+	router.Put("/class/:id", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "teacher"}), h.UpdateClass)
 	router.Post("/class/enroll", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.EnrollClass)
 }
 
@@ -72,8 +73,8 @@ func (h *classHandler) GetAllClasses(c *fiber.Ctx) error {
 
 	classes, err := h.service.GetAllClasses(ctx)
 	if err != nil {
-		log.Error().Err(err).Msg("handler::GetAllClasses - Failed to get classes from service")
-		return c.Status(fiber.StatusInternalServerError).JSON(response.Error(err))
+		code, errs := errmsg.Errors[error](err)
+		return c.Status(code).JSON(response.Error(errs))
 	}
 
 	return c.Status(fiber.StatusOK).JSON(response.Success(classes, "Successfully retrieved all classes"))
@@ -113,7 +114,7 @@ func (h *classHandler) EnrollClass(c *fiber.Ctx) error {
 	}
 
 	if err := v.Validate(req); err != nil {
-		log.Warn().Err(err).Msg("handler::login - Invalid request body")
+		log.Warn().Err(err).Msg("handler::EnrollClass - Invalid request body")
 		code, errs := errmsg.Errors(err, req)
 		return c.Status(code).JSON(response.Error(errs))
 	}
@@ -125,4 +126,42 @@ func (h *classHandler) EnrollClass(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(response.Success(nil, "Successfully enrolled in the class"))
+}
+
+func (h *classHandler) UpdateClass(c *fiber.Ctx) error {
+	var (
+		req = new(entity.UpdateClassRequest)
+		ctx = c.Context()
+		v   = adapter.Adapters.Validator
+		l   = middleware.GetLocals(c)
+	)
+
+	req.UserId = l.GetUserId()
+	id := c.Params("id") 
+
+    reqId, err := strconv.Atoi(id)
+    if err != nil {
+		log.Warn().Err(err).Msg("handler::UpdateClass - Failed to parsing id class")
+		return c.Status(fiber.StatusInternalServerError).JSON(response.Error(errmsg.NewCustomErrors(500, errmsg.WithMessage("Failed to parse params id class"))))    }
+
+	req.Id = reqId
+
+	if err := c.BodyParser(req); err != nil {
+		log.Warn().Err(err).Msg("handler::UpdateClass - Failed to parsing body request")
+		return c.Status(fiber.StatusBadRequest).JSON(response.Error(errmsg.NewCustomErrors(400, errmsg.WithMessage("Invalid request body"))))
+	}
+
+	if err := v.Validate(req); err != nil {
+		log.Warn().Err(err).Msg("handler::UpdateClass - Invalid request body")
+		code, errs := errmsg.Errors(err, req)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	res, err := h.service.UpdateClass(ctx, req)
+	if err != nil {
+		code, errs := errmsg.Errors(err, req)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	return c.Status(fiber.StatusOK).JSON(res)
 }

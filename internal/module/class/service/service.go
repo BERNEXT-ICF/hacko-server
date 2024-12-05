@@ -58,3 +58,12 @@ func (s *classService) EnrollClass(ctx context.Context, req *entity.EnrollClassR
 
 	return nil
 }
+
+func (s *classService) UpdateClass(ctx context.Context, req *entity.UpdateClassRequest) (*entity.UpdateClassResponse, error) {
+	updatedClass, err := s.repo.UpdateClass(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return updatedClass, nil
+}
