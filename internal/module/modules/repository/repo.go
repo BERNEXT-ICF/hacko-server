@@ -88,3 +88,58 @@ func (r *modulesRepository) CreateModules(ctx context.Context, req *entity.Creat
 
 	return res, nil
 }
+
+func (r *modulesRepository) UpdateModules(ctx context.Context, req *entity.UpdateModulesRequest) (*entity.UpdateModulesResponse, error) {
+	var res = new(entity.UpdateModulesResponse)
+
+	query := `
+		UPDATE modules
+		SET 
+			title = $1,
+			content = $2,
+			attachments = $3,
+			videos = $4,
+			updated_at = NOW()
+		WHERE 
+			id = $5 AND
+			creator_modules_id = $6
+		RETURNING 
+			id, title, content, attachments, videos, created_at, updated_at
+	`
+
+	err := r.db.QueryRowContext(ctx, query,
+		req.Title,                    
+		req.Content,                  
+		pq.Array(req.Attachments),    
+		pq.Array(req.Videos),         
+		req.ModulesId,                  
+		req.UserId,                   
+	).Scan(
+		&res.Id,
+		&res.Title,
+		&res.Content,
+		pq.Array(&res.Attachments),
+		pq.Array(&res.Videos),
+		&res.CreatedAt,
+		&res.UpdatedAt,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Warn().Any("payload", req).Msg("repo::UpdateModules - Module not found or unauthorized")
+			return nil, errmsg.NewCustomErrors(404, errmsg.WithMessage("Module not found or you are not authorized to update it"))
+		}
+
+		pqErr, ok := err.(*pq.Error)
+		if ok {
+			log.Error().Err(pqErr).Any("payload", req).Msg("repo::UpdateModules - Unhandled PostgreSQL error")
+			return nil, err
+		}
+
+		log.Error().Err(err).Any("payload", req).Msg("repo::UpdateModules - Failed to update module")
+		return nil, err
+	}
+
+	return res, nil
+}
+

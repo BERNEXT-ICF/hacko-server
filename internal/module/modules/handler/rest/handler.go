@@ -29,10 +29,9 @@ func NewModulesHandler() *modulesHandler {
 	return handler
 }
 
-
-
 func (h *modulesHandler) Register(router fiber.Router) {
 	router.Post("/class/materials/:materialsId/modules", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.CreateModules)
+	router.Put("/class/materials/modules/:modulesId", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.UpdateModules)
 }
 
 func (h *modulesHandler) CreateModules(c *fiber.Ctx) error {
@@ -67,6 +66,46 @@ func (h *modulesHandler) CreateModules(c *fiber.Ctx) error {
 	}
 
 	res, err := h.service.CreateModules(ctx, req)
+	if err != nil {
+		code, errs := errmsg.Errors[error](err)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(response.Success(res, ""))
+}
+
+func (h *modulesHandler) UpdateModules(c *fiber.Ctx) error {
+	var (
+		req = new(entity.UpdateModulesRequest)
+		ctx = c.Context()
+		v   = adapter.Adapters.Validator
+		l   = middleware.GetLocals(c)
+	)
+
+	req.UserId = l.GetUserId()
+
+	id := c.Params("modulesId")
+
+	reqId, err := strconv.Atoi(id)
+	if err != nil {
+		log.Warn().Err(err).Msg("handler::UpdateModules - Failed to parsing id modules")
+		return c.Status(fiber.StatusInternalServerError).JSON(response.Error(errmsg.NewCustomErrors(500, errmsg.WithMessage("Failed to parse params id modules"))))
+	}
+
+	req.ModulesId = reqId
+
+	if err := c.BodyParser(req); err != nil {
+		log.Warn().Err(err).Msg("handler::UpdateModules - Failed to parse request body")
+		return c.Status(fiber.StatusBadRequest).JSON(response.Error(err))
+	}
+
+	if err := v.Validate(req); err != nil {
+		log.Warn().Err(err).Msg("handler::UpdateModules - Invalid request body")
+		code, errs := errmsg.Errors(err, req)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	res, err := h.service.UpdateModules(ctx, req)
 	if err != nil {
 		code, errs := errmsg.Errors[error](err)
 		return c.Status(code).JSON(response.Error(errs))

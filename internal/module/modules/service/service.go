@@ -27,3 +27,13 @@ func (s *modulesService) CreateModules(ctx context.Context, req *entity.CreateMo
 
 	return response, nil
 }
+
+func (s *modulesService) UpdateModules(ctx context.Context, req *entity.UpdateModulesRequest) (*entity.UpdateModulesResponse, error) {
+
+	response, err := s.repo.UpdateModules(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
+}
