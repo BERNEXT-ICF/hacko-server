@@ -96,3 +96,24 @@ type UpdateVisibilityClassResponse struct {
 	Title  string `json:"title" db:"title"`
 	Status string `json:"status" db:"status"`
 }
+
+type GetAllUsersEnrolledClassRequest struct {
+	UserId  string `validate:"required"`
+	ClassId int    `json:"class_id" validate:"required"`
+}
+
+type GetUsersEnrolledClassResponse struct {
+	UserId string `json:"user_id" db:"id"`
+	Name   string `json:"name" db:"name"`
+}
+
+type GetAllUsersEnrolledClassResponse struct {
+	UsersEnrolled []GetUsersEnrolledClassResponse `json:"users_enrolled"`
+	Total         int                            `json:"total"`
+}
+
+type DeleteUsersClassRequest struct {
+	UserId  string `validate:"required"`
+	ClassId int    `json:"class_id" validate:"required"`
+	StudentId  string `json:"student_id" validate:"required"`
+}
