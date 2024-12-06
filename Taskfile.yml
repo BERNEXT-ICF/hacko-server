@@ -15,6 +15,7 @@ tasks:
   migrate:
     cmds:
       - migrate -path db/migrations -database "postgres://${HACKO_POSTGRES_USER}:${HACKO_POSTGRES_PASSWORD}@${HACKO_POSTGRES_HOST}:${HACKO_POSTGRES_PORT}/${HACKO_POSTGRES_DB}?sslmode=${HACKO_POSTGRES_SSL_MODE}" {{.cmd}}
+      # - migrate -path db/migrations -database "postgres://${HACKO_POSTGRES_USER_PROD}:${HACKO_POSTGRES_PASSWORD_PROD}@${HACKO_POSTGRES_HOST_PROD}:${HACKO_POSTGRES_PORT_PROD}/${HACKO_POSTGRES_DB_PROD}?sslmode=${HACKO_POSTGRES_SSL_MODE_PROD}" {{.cmd}}
   create-migration:
     cmds:
       - migrate create -ext sql -dir db/migrations/ {{.name}} -tz UTC

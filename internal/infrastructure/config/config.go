@@ -43,6 +43,12 @@ type Config struct {
 		Password string `env:"HACKO_POSTGRES_PASSWORD" env-default:"postgres"`
 		Database string `env:"HACKO_POSTGRES_DB" env-default:"venatronics"`
 		SslMode  string `env:"HACKO_POSTGRES_SSL_MODE" env-default:"disable"`
+		// Host     string `env:"HACKO_POSTGRES_HOST_PROD" env-default:"localhost"`
+		// Port     string `env:"HACKO_POSTGRES_PORT_PROD" env-default:"5432"`
+		// Username string `env:"HACKO_POSTGRES_USER_PROD" env-default:"postgres"`
+		// Password string `env:"HACKO_POSTGRES_PASSWORD_PROD" env-default:"postgres"`
+		// Database string `env:"HACKO_POSTGRES_DB_PROD" env-default:"venatronics"`
+		// SslMode  string `env:"HACKO_POSTGRES_SSL_MODE_PROD" env-default:"disable"`
 	}
 	HackoStorage struct {
 		Key      string `env:"HACKO_STORAGE_KEY"`
