@@ -19,10 +19,10 @@ jobs:
         password: ${{ secrets.DOCKER_PASSWORD }}
     - name: Build Docker image
       run: |
-        docker build -t myusername/my-backend:latest .
+        docker build -t mortomulu/hacko:latest .
     - name: Push Docker image
       run: |
-        docker push myusername/my-backend:latest
+        docker push mortomulu/hacko:latest
     
   deploy:
     runs-on: ubuntu-latest
@@ -36,4 +36,4 @@ jobs:
 
     - name: Pull Docker image and run Docker Compose on VPS
       run: |
-        ssh -o StrictHostKeyChecking=no user@vps-ip "cd /opt/my-project && docker-compose pull && docker-compose up -d"
+        ssh -o StrictHostKeyChecking=no user@vps-ip "cd /hacko && docker-compose pull && docker-compose up -d"
