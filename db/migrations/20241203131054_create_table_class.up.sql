@@ -20,5 +20,5 @@ CREATE TABLE IF NOT EXISTS class (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
 
     -- Foreign key constraint to 'users' table
-    CONSTRAINT fk_creatorclass FOREIGN KEY (creatorclassId) REFERENCES users(id) ON DELETE CASCADE
+    CONSTRAINT fk_creatorclass FOREIGN KEY (creator_class_Id) REFERENCES users(id) ON DELETE CASCADE
 );
