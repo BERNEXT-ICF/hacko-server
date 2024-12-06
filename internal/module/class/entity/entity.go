@@ -112,7 +112,8 @@ type GetAllUsersEnrolledClassResponse struct {
 	Total         int                            `json:"total"`
 }
 
-type DeleteUsersClass struct {
+type DeleteUsersClassRequest struct {
+	UserId  string `validate:"required"`
 	ClassId int    `json:"class_id" validate:"required"`
-	UserId  string `json:"user_id" validate:"required"`
+	StudentId  string `json:"student_id" validate:"required"`
 }

@@ -94,3 +94,12 @@ func (s *classService) GetAllUsersEnrolledClass(ctx context.Context, req *entity
 
 	return res, nil
 }
+
+func (s *classService) DeleteStudentClass(ctx context.Context, req *entity.DeleteUsersClassRequest) error {
+	err := s.repo.DeleteStudentClass(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

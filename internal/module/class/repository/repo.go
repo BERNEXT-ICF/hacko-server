@@ -324,7 +324,7 @@ func (r *classRepository) GetAllUsersEnrolledClass(ctx context.Context, req *ent
 			return nil, err
 		}
 		users = append(users, user)
-		total++ 
+		total++
 	}
 
 	if rows.Err() != nil {
@@ -336,4 +336,34 @@ func (r *classRepository) GetAllUsersEnrolledClass(ctx context.Context, req *ent
 	response.Total = total
 
 	return &response, nil
+}
+
+func (r *classRepository) DeleteStudentClass(ctx context.Context, req *entity.DeleteUsersClassRequest) error {
+	query := `
+		DELETE FROM users_classes
+		WHERE class_id = $1 AND user_id = $2 AND EXISTS (
+			SELECT 1
+			FROM class
+			WHERE id = $1 AND creator_class_id = $3
+		)
+	`
+
+	result, err := r.db.ExecContext(ctx, query, req.ClassId, req.StudentId, req.UserId)
+	if err != nil {
+		log.Error().Err(err).Any("payload", req).Msg("repo::DeleteStudentClass - Failed to delete student from class")
+		return errmsg.NewCustomErrors(500, errmsg.WithMessage("Failed to delete student from class"))
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		log.Error().Err(err).Any("payload", req).Msg("repo::DeleteStudentClass - Failed to get rows affected")
+		return errmsg.NewCustomErrors(500, errmsg.WithMessage("Failed to delete student from class"))
+	}
+
+	if rowsAffected == 0 {
+		log.Warn().Any("payload", req).Msg("repo::DeleteStudentClass - No rows affected, unauthorized or invalid class/student")
+		return errmsg.NewCustomErrors(404, errmsg.WithMessage("Class or student not found, or you are not authorized"))
+	}
+
+	return nil
 }
