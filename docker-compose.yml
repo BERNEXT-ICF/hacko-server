@@ -1,0 +1,14 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hacko-backend
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    command: ./hacko-app
+
+volumes:
+  postgres-data:
