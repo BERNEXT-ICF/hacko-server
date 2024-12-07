@@ -15,8 +15,8 @@ jobs:
     - name: Login to Docker Hub
       uses: docker/login-action@v3
       with:
-        username: ${{ DOCKER_USERNAME }}
-        password: ${{ DOCKER_PASSWORD }}
+        username: ${{ secrets_DOCKER_USERNAME }}
+        password: ${{ secrets_DOCKER_PASSWORD }}
     - name: Build Docker image
       run: |
         docker build -t mortomulu/hacko:latest .
