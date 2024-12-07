@@ -53,7 +53,7 @@ jobs:
             docker stop hacko-container || true
             docker rm hacko-container || true
             echo "Starting new container..."
-            docker run --env-file .env -d --restart unless-stopped --name hacko-container mortomulu/hacko:latest || { echo "Failed to start container"; exit 1; }
+            docker run --env-file .env -d --name hacko-container mortomulu/hacko:latest || { echo "Failed to start container"; exit 1; }
             echo "Pruning unused images..."
             docker image prune -f
         EOF
