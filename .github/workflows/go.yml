@@ -53,7 +53,9 @@ jobs:
             docker stop hacko_container || true
             docker rm hacko_container || true
             echo "Starting new container..."
-            docker run -d -p 3000:3000 -v /hacko/.env:/app/.env --name hacko-container mortomulu/hacko:latest || { echo "Failed to start container"; exit 1; }
+            # docker run -d -p 3000:3000 -v /hacko/.env:/app/.env --name hacko-container mortomulu/hacko:latest
+            # docker run -d -p 3000:3000 -v /hacko/.env:/app/.env --name hacko_container mortomulu/hacko:latest || { echo "Failed to start container"; exit 1; }
+            docker run --env-file .env -d -p 3000:3000 --name hacko_container mortomulu/hacko:latest || { echo "Failed to start container"; exit 1; }
             echo "Pruning unused images..."
             docker image prune -f
         EOF
