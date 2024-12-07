@@ -45,7 +45,7 @@ jobs:
 
     - name: Pull Docker image and restart container
       run: |
-        ssh -o StrictHostKeyChecking=no user@vps-ip <<EOF
+        ssh -o StrictHostKeyChecking=no root@206.189.88.38 <<EOF
             cd /hacko
             echo "Pulling latest image..."
             docker pull mortomulu/hacko:latest || { echo "Failed to pull image"; exit 1; }
