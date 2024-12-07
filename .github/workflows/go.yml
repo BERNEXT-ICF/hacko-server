@@ -50,10 +50,10 @@ jobs:
             echo "Pulling latest image..."
             docker pull mortomulu/hacko:latest || { echo "Failed to pull image"; exit 1; }
             echo "Stopping and removing old container..."
-            docker stop hacko-container || true
-            docker rm hacko-container || true
+            docker stop hacko_container || true
+            docker rm hacko_container || true
             echo "Starting new container..."
-            docker run --env-file .env -d --name hacko-container mortomulu/hacko:latest || { echo "Failed to start container"; exit 1; }
+            docker run -p -d 3000:3000 -v $(pwd)/.env:/app/.env --name hacko-container mortomulu/hacko:latest || { echo "Failed to start container"; exit 1; }
             echo "Pruning unused images..."
             docker image prune -f
         EOF
