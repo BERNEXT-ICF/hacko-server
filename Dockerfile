@@ -10,6 +10,5 @@ FROM alpine:latest
 RUN apk add --no-cache ca-certificates
 WORKDIR /app
 COPY --from=builder /app/hacko-app .
-COPY .env /app/.env
 EXPOSE 3000
 CMD ["./hacko-app"]
