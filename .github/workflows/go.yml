@@ -16,7 +16,7 @@ jobs:
       uses: ./
       with:
         username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets_DOCKER_PASSWORD }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
     - name: Build Docker image
       run: |
         docker build -t mortomulu/hacko:latest .
