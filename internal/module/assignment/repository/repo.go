@@ -67,23 +67,22 @@ func (r *assignmentRepository) CreateAssignment(ctx context.Context, req *entity
 }
 
 func (r *assignmentRepository) FindClass(ctx context.Context, req string) error {
-    query := `SELECT id FROM class WHERE id = $1`
+	query := `SELECT id FROM class WHERE id = $1`
 
-    var classId string
-    err := r.db.QueryRowContext(ctx, query, req).Scan(&classId)
-    
-    if err != nil {
-        if err == sql.ErrNoRows {
-            log.Error().Err(err).Str("class_id", req).Msg("repo::FindClass - Class not found")
-            return errmsg.NewCustomErrors(404, errmsg.WithMessage("Class not found"))
-        }
-        log.Error().Err(err).Str("class_id", req).Msg("repo::FindClass - Failed to query class")
-        return err
-    }
+	var classId string
+	err := r.db.QueryRowContext(ctx, query, req).Scan(&classId)
 
-    return nil
+	if err != nil {
+		if err == sql.ErrNoRows {
+			log.Error().Err(err).Str("class_id", req).Msg("repo::FindClass - Class not found")
+			return errmsg.NewCustomErrors(404, errmsg.WithMessage("Class not found"))
+		}
+		log.Error().Err(err).Str("class_id", req).Msg("repo::FindClass - Failed to query class")
+		return err
+	}
+
+	return nil
 }
-
 
 func (r *assignmentRepository) GetAllAssignmentByClassId(ctx context.Context, req *entity.GetAllAssignmentByClassIdRequest) ([]entity.GetAssignmentByClassIdResponse, error) {
 	query := `
@@ -108,7 +107,6 @@ func (r *assignmentRepository) GetAllAssignmentByClassId(ctx context.Context, re
 			&assignment.ClassId,
 			&assignment.Title,
 			&assignment.Description,
-			// &assignment.Status,
 			&assignment.DueDate,
 			&assignment.CreatedAt,
 			&assignment.UpdatedAt,
@@ -118,7 +116,18 @@ func (r *assignmentRepository) GetAllAssignmentByClassId(ctx context.Context, re
 			return nil, err
 		}
 
-		// repo.GetAssignmentStatus()
+		// Memanggil GetAssignmentStatus dengan parameter yang tepat
+		status := r.GetAssignmentStatus(ctx, &entity.GetAssignmentStatusRequest{
+			ClassId:      req.ClassId,
+			AssignmentId: assignment.Id, // Menggunakan ID assignment untuk submission_id
+			UserId:       req.UserId,    // Misalkan Anda ingin menggunakan UserId dari request
+		})
+
+		if status == "" {
+			assignment.Status = "not_submit_yet"
+		} else {
+			assignment.Status = status
+		}
 
 		assignments = append(assignments, assignment)
 	}
@@ -132,22 +141,22 @@ func (r *assignmentRepository) GetAllAssignmentByClassId(ctx context.Context, re
 }
 
 func (r *assignmentRepository) GetAssignmentStatus(ctx context.Context, req *entity.GetAssignmentStatusRequest) string {
-    query := `
+	query := `
         SELECT status
         FROM submission
-        WHERE class_id = $1 AND submission_id =$2 AND user_id = $3
+        WHERE class_id = $1 AND submission_id = $2 AND user_id = $3
         LIMIT 1; 
     `
-    var status string
-    err := r.db.QueryRowContext(ctx, query, req.ClassId).Scan(&status)
-    if err != nil {
-        if err == sql.ErrNoRows {
-            log.Error().Err(err).Str("class_id", req.ClassId).Msg("repo::GetAssignmentStatus - No assignments found")
-            return ""
-        }
-        log.Error().Err(err).Str("class_id", req.ClassId).Msg("repo::GetAssignmentStatus - Failed to query status")
-        return ""
-    }
+	var status string
+	err := r.db.QueryRowContext(ctx, query, req.ClassId, req.AssignmentId, req.UserId).Scan(&status)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			log.Error().Err(err).Str("class_id", req.ClassId).Msg("repo::GetAssignmentStatus - No assignments found")
+			return "" // Mengembalikan string kosong jika tidak ada hasil
+		}
+		log.Error().Err(err).Str("class_id", req.ClassId).Msg("repo::GetAssignmentStatus - Failed to query status")
+		return "" // Mengembalikan string kosong jika ada error lain
+	}
 
-    return status
+	return status
 }

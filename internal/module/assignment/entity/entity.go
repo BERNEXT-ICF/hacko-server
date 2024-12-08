@@ -41,5 +41,5 @@ type GetAssignmentByClassIdResponse struct {
 type GetAssignmentStatusRequest struct {
 	UserId       string	
 	ClassId      string
-	AssignmentId string
+	AssignmentId int
 }
