@@ -1,14 +1,86 @@
+# services:
+#   backend:
+#     build:
+#       context: .
+#       dockerfile: Dockerfile
+#     container_name: hacko-backend
+#     env_file:
+#       - .env
+#     ports:
+#       - "3000:3000"
+#     command: ./hacko-app
+
+# volumes:
+#   postgres-data:
+
+version: '3.8'
 services:
-  backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: hacko-backend
-    env_file:
-      - .env
+  app:
+    image: mortomulu/hacko:latest
+    container_name: hacko_app
     ports:
-      - "3000:3000"
-    command: ./hacko-app
+      - "${APP_PORT}:${APP_PORT}"
+    environment:
+      - APP_NAME=${APP_NAME}
+      - APP_PORT=${APP_PORT}
+      - APP_ENV=${APP_ENV}
+      - APP_BASE_URL=${APP_BASE_URL}
+      - APP_LOG_LEVEL=${APP_LOG_LEVEL}
+      - APP_LOG_FILE=${APP_LOG_FILE}
+      - APP_LOG_FILE_WS=${APP_LOG_FILE_WS}
+      - LOCAL_STORAGE_PUBLIC_PATH=${LOCAL_STORAGE_PUBLIC_PATH}
+      - LOCAL_STORAGE_PRIVATE_PATH=${LOCAL_STORAGE_PRIVATE_PATH}
+      - JWT_PRIVATE_KEY=${JWT_PRIVATE_KEY}
+      - ADMIN_EMAIL_ADDRESS=${ADMIN_EMAIL_ADDRESS}
+      - NATS_URL=${NATS_URL}
+      - FRONTEND_CLIENT_BASE_URL=${FRONTEND_CLIENT_BASE_URL}
+      - FRONTEND_ADMIN_BASE_URL=${FRONTEND_ADMIN_BASE_URL}
+      - POSTGRES_HOST=${HACKO_POSTGRES_HOST}
+      - POSTGRES_PORT=${HACKO_POSTGRES_PORT}
+      - POSTGRES_USER=${HACKO_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${HACKO_POSTGRES_PASSWORD}
+      - POSTGRES_DB=${HACKO_POSTGRES_DB}
+      - SSL_MODE=${HACKO_POSTGRES_SSL_MODE}
+    volumes:
+      - .:/usr/src/app
+    working_dir: /usr/src/app
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:13
+    container_name: hacko_postgres
+    environment:
+      - POSTGRES_HOST=${HACKO_POSTGRES_HOST}
+      - POSTGRES_PORT=${HACKO_POSTGRES_PORT}
+      - POSTGRES_USER=${HACKO_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${HACKO_POSTGRES_PASSWORD}
+      - POSTGRES_DB=${HACKO_POSTGRES_DB}
+      - SSL_MODE=${HACKO_POSTGRES_SSL_MODE}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # nats:
+  #   image: nats:latest
+  #   container_name: hacko_nats
+  #   ports:
+  #     - "4222:4222"
+  #   environment:
+  #     - NATS_URL=${NATS_URL}
+
+  # storage:
+  #   image: minio/minio
+  #   container_name: hacko_storage
+  #   environment:
+  #     - MINIO_ROOT_USER=${HACKO_STORAGE_KEY}
+  #     - MINIO_ROOT_PASSWORD=${HACKO_STORAGE_SECRET}
+  #   volumes:
+  #     - ./storage:/data
+  #   ports:
+  #     - "9000:9000"
+  #   command: server /data
 
 volumes:
-  postgres-data:
+  postgres_data:

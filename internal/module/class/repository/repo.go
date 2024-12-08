@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"hacko-app/internal/module/class/entity"
 	"hacko-app/internal/module/class/ports"
 	"hacko-app/pkg/errmsg"
@@ -115,6 +116,116 @@ func (r *classRepository) GetAllClasses(ctx context.Context) (*entity.GetAllClas
 
 	return response, nil
 }
+
+func (r *classRepository) FindClass(ctx context.Context, id string) error {
+    query := `
+        SELECT 
+            1 
+        FROM 
+            class
+        WHERE 
+            id = $1
+    `
+
+    var exists int
+    err := r.db.QueryRowContext(ctx, query, id).Scan(&exists)
+    if err != nil {
+        if errors.Is(err, sql.ErrNoRows) {
+            log.Warn().Any("class_id", id).Msg("repo::FindClass - Class not found")
+            return errmsg.NewCustomErrors(404, errmsg.WithMessage("Class not found"))
+        }
+
+        log.Error().Err(err).Any("class_id", id).Msg("repo::FindClass - Failed to query class")
+        return err
+    }
+
+    return nil
+}
+
+func (r *classRepository) GetAllSyllabus(ctx context.Context, classId string) ([]entity.GetMaterialResponse, error) {
+    materialsQuery := `
+        SELECT 
+            id, 
+            title 
+        FROM 
+            materials 
+        WHERE 
+            class_id = $1
+    `
+
+    materialsRows, err := r.db.QueryContext(ctx, materialsQuery, classId)
+    if err != nil {
+        log.Error().Err(err).Str("class_id", classId).Msg("repo::GetAllSyllabus - Failed to query materials")
+        return nil, err
+    }
+    defer materialsRows.Close()
+
+    var materials []entity.GetMaterialResponse
+
+    // Iterasi untuk setiap material
+    for materialsRows.Next() {
+        var material entity.GetMaterialResponse
+        err := materialsRows.Scan(&material.Id, &material.Title)
+        if err != nil {
+            log.Error().Err(err).Msg("repo::GetAllSyllabus - Failed to scan material data")
+            return nil, err
+        }
+
+        modulesQuery := `
+            SELECT 
+                id, 
+                title, 
+                content, 
+                attachments, 
+                videos 
+            FROM 
+                modules 
+            WHERE 
+                materials_id = $1
+        `
+        modulesRows, err := r.db.QueryContext(ctx, modulesQuery, material.Id)
+        if err != nil {
+            log.Error().Err(err).Int("material_id", material.Id).Msg("repo::GetAllSyllabus - Failed to query modules")
+            return nil, err
+        }
+
+        var modules []entity.GetModuleResponse
+
+        for modulesRows.Next() {
+            var module entity.GetModuleResponse
+            var attachments, videos []string
+
+            err := modulesRows.Scan(
+                &module.Id,
+                &module.Title,
+                &module.Content,
+                pq.Array(&attachments),
+                pq.Array(&videos),
+            )
+            if err != nil {
+                log.Error().Err(err).Msg("repo::GetAllSyllabus - Failed to scan module data")
+                return nil, err
+            }
+
+            module.Attachments = attachments
+            module.Videos = videos
+            modules = append(modules, module)
+        }
+
+        modulesRows.Close()
+
+        material.Modules = modules
+        materials = append(materials, material)
+    }
+
+    if err := materialsRows.Err(); err != nil {
+        log.Error().Err(err).Msg("repo::GetAllSyllabus - Error occurred during materials iteration")
+        return nil, err
+    }
+
+    return materials, nil
+}
+
 
 func (r *classRepository) GetOverviewClassById(ctx context.Context, req *entity.GetOverviewClassByIdRequest) (*entity.GetOverviewClassByIdResponse, error) {
 	var res = new(entity.GetOverviewClassByIdResponse)
