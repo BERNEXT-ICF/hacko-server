@@ -42,33 +42,32 @@ type GetOverviewClassByIdRequest struct {
 }
 
 type GetModuleResponse struct {
-    Id          int      `json:"id" db:"id"`
-    Title       string   `json:"title" db:"title"`
-    Content     string   `json:"content" db:"content"`
-    Attachments []string `json:"attachments" db:"attachments"`
-    Videos      []string `json:"videos" db:"attachments"`
+	Id          int      `json:"id" db:"id"`
+	Title       string   `json:"title" db:"title"`
+	Content     string   `json:"content" db:"content"`
+	Attachments []string `json:"attachments" db:"attachments"`
+	Videos      []string `json:"videos" db:"attachments"`
 }
 
 type GetMaterialResponse struct {
-    Id      int                 `json:"id" db:"id"`
-    Title   string              `json:"title" db:"title"`
-    Modules []GetModuleResponse `json:"modules,omitempty"`
+	Id      int                 `json:"id" db:"id"`
+	Title   string              `json:"title" db:"title"`
+	Modules []GetModuleResponse `json:"modules,omitempty"`
 }
 
 type GetOverviewClassByIdResponse struct {
-    ID               int                 `json:"id" db:"id"`
-    Title            string              `json:"title" db:"title"`
-    Description      string              `json:"description,omitempty" db:"description"`
-    Image            string              `json:"image,omitempty" db:"image"`
-    Video            string              `json:"video,omitempty" db:"video"`
-    Status           string              `json:"status" db:"status"`
-    EnrollmentStatus string              `json:"enrollment_status" db:"enrollment_status"`
-    CreatorClassID   string              `json:"creator_class_id" db:"creator_class_id"`
-    CreatedAt        time.Time           `json:"created_at" db:"created_at"`
-    UpdatedAt        time.Time           `json:"updated_at" db:"updated_at"`
-    Syllabus         []GetMaterialResponse `json:"syllabus"` // Syllabus langsung berupa array materials
+	ID               int                   `json:"id" db:"id"`
+	Title            string                `json:"title" db:"title"`
+	Description      string                `json:"description,omitempty" db:"description"`
+	Image            string                `json:"image,omitempty" db:"image"`
+	Video            string                `json:"video,omitempty" db:"video"`
+	Status           string                `json:"status" db:"status"`
+	EnrollmentStatus string                `json:"enrollment_status" db:"enrollment_status"`
+	CreatorClassID   string                `json:"creator_class_id" db:"creator_class_id"`
+	CreatedAt        time.Time             `json:"created_at" db:"created_at"`
+	UpdatedAt        time.Time             `json:"updated_at" db:"updated_at"`
+	Syllabus         []GetMaterialResponse `json:"syllabus"`
 }
-
 
 type EnrollClassRequest struct {
 	UserId  string `validate:"required"`

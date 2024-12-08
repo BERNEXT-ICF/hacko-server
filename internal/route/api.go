@@ -6,6 +6,8 @@ import (
 	restClass "hacko-app/internal/module/class/handler/rest"
 	restMaterials "hacko-app/internal/module/materials/handler/rest"
 	restModules "hacko-app/internal/module/modules/handler/rest"
+	restAssignment "hacko-app/internal/module/assignment/handler/rest"
+	restSubmission "hacko-app/internal/module/submission/handler/rest"
 	"hacko-app/pkg/response"
 
 	"github.com/gofiber/fiber/v2"
@@ -22,6 +24,8 @@ func SetupRoutes(app *fiber.App) {
 	restClass.NewClassHandler().Register(api)
 	restMaterials.NewMaterialsHandler().Register(api)
 	restModules.NewModulesHandler().Register(api)
+	restAssignment.NewAssignmentHandler().Register(api)
+	restSubmission.NewSubmissionHandler().Register(api)
 
 	// fallback route
 	app.Use(func(c *fiber.Ctx) error {

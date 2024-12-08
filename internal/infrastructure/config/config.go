@@ -38,7 +38,7 @@ type Config struct {
 	}
 	HackoPostgres struct {
 		// Host     string `env:"HACKO_POSTGRES_HOST" env-default:"localhost"`
-		// Port     string `env:"HACKO_POSTGRES_PORT" env-default:"5432"`statu
+		// Port     string `env:"HACKO_POSTGRES_PORT" env-default:"5432"`
 		// Username string `env:"HACKO_POSTGRES_USER" env-default:"postgres"`
 		// Password string `env:"HACKO_POSTGRES_PASSWORD" env-default:"postgres"`
 		// Database string `env:"HACKO_POSTGRES_DB" env-default:"venatronics"`
