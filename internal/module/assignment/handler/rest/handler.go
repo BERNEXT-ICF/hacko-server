@@ -32,6 +32,7 @@ func NewAssignmentHandler() *assignmentHandler {
 func (h *assignmentHandler) Register(router fiber.Router) {
 	router.Post("/class/:classId/assignment", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.CreateAssignment)
 	router.Get("/class/:classId/assignment", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.GetAllAssignmentByClassId)
+	router.Get("/class/assignment/:assignmentId", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.GetAssignmentDetails)
 }
 
 func (h *assignmentHandler) CreateAssignment(c *fiber.Ctx) error {
@@ -93,6 +94,41 @@ func (h *assignmentHandler) GetAllAssignmentByClassId(c *fiber.Ctx) error{
 	}
 
 	res, err := h.service.GetAllAssignmentByClassId(ctx, req)
+	if err != nil {
+		code, errs := errmsg.Errors[error](err)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(response.Success(res, ""))	
+}
+
+func (h *assignmentHandler) GetAssignmentDetails(c *fiber.Ctx) error{
+	var (
+		req = new(entity.GetAssignmentDetailsRequest)
+		ctx = c.Context()
+		v   = adapter.Adapters.Validator
+		l   = middleware.GetLocals(c)
+	)
+
+	req.UserId = l.GetUserId()
+
+	id := c.Params("assignmentId")
+
+	reqId, err := strconv.Atoi(id)
+	if err != nil {
+		log.Warn().Err(err).Msg("handler::GetAssignmentDetails - Failed to parsing id class")
+		return c.Status(fiber.StatusInternalServerError).JSON(response.Error(errmsg.NewCustomErrors(500, errmsg.WithMessage("Failed to parse params id class"))))
+	}
+
+	req.AssignmentId = reqId
+
+	if err := v.Validate(req); err != nil {
+		log.Warn().Err(err).Msg("handler::GetAssignmentDetails - Invalid request body")
+		code, errs := errmsg.Errors(err, req)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	res, err := h.service.GetAssignmentDetails(ctx, req)
 	if err != nil {
 		code, errs := errmsg.Errors[error](err)
 		return c.Status(code).JSON(response.Error(errs))
