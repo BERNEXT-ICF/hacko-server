@@ -44,7 +44,7 @@ func (h *assignmentHandler) CreateAssignment(c *fiber.Ctx) error {
 
 	req.UserId = l.GetUserId()
 
-	id := c.Params("classid")
+	id := c.Params("classId")
 
 	reqId, err := strconv.Atoi(id)
 	if err != nil {
@@ -84,7 +84,7 @@ func (h *assignmentHandler) GetAllAssignmentByClassId(c *fiber.Ctx) error{
 
 	req.UserId = l.GetUserId()
 
-	req.ClassId = c.Params("classid")
+	req.ClassId = c.Params("classId")
 
 	if err := v.Validate(req); err != nil {
 		log.Warn().Err(err).Msg("handler::GetAllAssignmentByClassId - Invalid request body")
