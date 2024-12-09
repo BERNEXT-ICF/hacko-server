@@ -4,6 +4,7 @@ import (
 	"context"
 	"hacko-app/internal/module/class/entity"
 	"hacko-app/internal/module/class/ports"
+
 	// "hacko-app/pkg/response"
 
 	// "github.com/gofiber/fiber/v2"
@@ -44,25 +45,24 @@ func (s *classService) GetAllClasses(ctx context.Context) (*entity.GetAllClasses
 }
 
 func (s *classService) GetOverviewClassById(ctx context.Context, req *entity.GetOverviewClassByIdRequest) (*entity.GetOverviewClassByIdResponse, error) {
-    if err := s.repo.FindClass(ctx, req.Id); err != nil {
-        return nil, err
-    }
+	if err := s.repo.FindClass(ctx, req.Id); err != nil {
+		return nil, err
+	}
 
-    class, err := s.repo.GetOverviewClassById(ctx, req)
-    if err != nil {
-        return nil, err
-    }
+	class, err := s.repo.GetOverviewClassById(ctx, req)
+	if err != nil {
+		return nil, err
+	}
 
-    syllabus, err := s.repo.GetAllSyllabus(ctx, req.Id)
-    if err != nil {
-        return nil, err
-    }
+	syllabus, err := s.repo.GetAllSyllabus(ctx, req.Id)
+	if err != nil {
+		return nil, err
+	}
 
-    class.Syllabus = syllabus
+	class.Syllabus = syllabus
 
-    return class, nil
+	return class, nil
 }
-
 
 func (s *classService) EnrollClass(ctx context.Context, req *entity.EnrollClassRequest) error {
 	err := s.repo.EnrollClass(ctx, req)
@@ -116,4 +116,34 @@ func (s *classService) DeleteStudentClass(ctx context.Context, req *entity.Delet
 	}
 
 	return nil
+}
+
+func (s *classService) GetAllStudentNotEnrolledClass(ctx context.Context, req *entity.GetAllUserNotEnrolledClassRequest) (*entity.GetAllUserNotEnrolledClassResponse, error) {
+	if err := s.repo.FindClass(ctx, req.ClassId); err != nil {
+		return nil, err
+	}
+
+	res, err := s.repo.GetAllStudentNotEnrolledClass(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func (s *classService) AddUserToClass(ctx context.Context, req *entity.AddUsersToClassRequest) (*entity.AddUsersToClassResponse, error) {
+	if err := s.repo.FindClass(ctx, req.ClassId); err != nil {
+		return nil, err
+	}
+
+	if err := s.repo.CheckEnrollment(ctx, req); err != nil {
+		return nil, err
+	}
+
+	res, err := s.repo.AddUserToClass(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }

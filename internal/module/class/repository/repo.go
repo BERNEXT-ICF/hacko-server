@@ -118,7 +118,7 @@ func (r *classRepository) GetAllClasses(ctx context.Context) (*entity.GetAllClas
 }
 
 func (r *classRepository) FindClass(ctx context.Context, id string) error {
-    query := `
+	query := `
         SELECT 
             1 
         FROM 
@@ -127,23 +127,23 @@ func (r *classRepository) FindClass(ctx context.Context, id string) error {
             id = $1
     `
 
-    var exists int
-    err := r.db.QueryRowContext(ctx, query, id).Scan(&exists)
-    if err != nil {
-        if errors.Is(err, sql.ErrNoRows) {
-            log.Warn().Any("class_id", id).Msg("repo::FindClass - Class not found")
-            return errmsg.NewCustomErrors(404, errmsg.WithMessage("Class not found"))
-        }
+	var exists int
+	err := r.db.QueryRowContext(ctx, query, id).Scan(&exists)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Warn().Any("class_id", id).Msg("repo::FindClass - Class not found")
+			return errmsg.NewCustomErrors(404, errmsg.WithMessage("Class not found"))
+		}
 
-        log.Error().Err(err).Any("class_id", id).Msg("repo::FindClass - Failed to query class")
-        return err
-    }
+		log.Error().Err(err).Any("class_id", id).Msg("repo::FindClass - Failed to query class")
+		return err
+	}
 
-    return nil
+	return nil
 }
 
 func (r *classRepository) GetAllSyllabus(ctx context.Context, classId string) ([]entity.GetMaterialResponse, error) {
-    materialsQuery := `
+	materialsQuery := `
         SELECT 
             id, 
             title 
@@ -153,25 +153,25 @@ func (r *classRepository) GetAllSyllabus(ctx context.Context, classId string) ([
             class_id = $1
     `
 
-    materialsRows, err := r.db.QueryContext(ctx, materialsQuery, classId)
-    if err != nil {
-        log.Error().Err(err).Str("class_id", classId).Msg("repo::GetAllSyllabus - Failed to query materials")
-        return nil, err
-    }
-    defer materialsRows.Close()
+	materialsRows, err := r.db.QueryContext(ctx, materialsQuery, classId)
+	if err != nil {
+		log.Error().Err(err).Str("class_id", classId).Msg("repo::GetAllSyllabus - Failed to query materials")
+		return nil, err
+	}
+	defer materialsRows.Close()
 
-    var materials []entity.GetMaterialResponse
+	var materials []entity.GetMaterialResponse
 
-    // Iterasi untuk setiap material
-    for materialsRows.Next() {
-        var material entity.GetMaterialResponse
-        err := materialsRows.Scan(&material.Id, &material.Title)
-        if err != nil {
-            log.Error().Err(err).Msg("repo::GetAllSyllabus - Failed to scan material data")
-            return nil, err
-        }
+	// Iterasi untuk setiap material
+	for materialsRows.Next() {
+		var material entity.GetMaterialResponse
+		err := materialsRows.Scan(&material.Id, &material.Title)
+		if err != nil {
+			log.Error().Err(err).Msg("repo::GetAllSyllabus - Failed to scan material data")
+			return nil, err
+		}
 
-        modulesQuery := `
+		modulesQuery := `
             SELECT 
                 id, 
                 title, 
@@ -183,49 +183,48 @@ func (r *classRepository) GetAllSyllabus(ctx context.Context, classId string) ([
             WHERE 
                 materials_id = $1
         `
-        modulesRows, err := r.db.QueryContext(ctx, modulesQuery, material.Id)
-        if err != nil {
-            log.Error().Err(err).Int("material_id", material.Id).Msg("repo::GetAllSyllabus - Failed to query modules")
-            return nil, err
-        }
+		modulesRows, err := r.db.QueryContext(ctx, modulesQuery, material.Id)
+		if err != nil {
+			log.Error().Err(err).Int("material_id", material.Id).Msg("repo::GetAllSyllabus - Failed to query modules")
+			return nil, err
+		}
 
-        var modules []entity.GetModuleResponse
+		var modules []entity.GetModuleResponse
 
-        for modulesRows.Next() {
-            var module entity.GetModuleResponse
-            var attachments, videos []string
+		for modulesRows.Next() {
+			var module entity.GetModuleResponse
+			var attachments, videos []string
 
-            err := modulesRows.Scan(
-                &module.Id,
-                &module.Title,
-                &module.Content,
-                pq.Array(&attachments),
-                pq.Array(&videos),
-            )
-            if err != nil {
-                log.Error().Err(err).Msg("repo::GetAllSyllabus - Failed to scan module data")
-                return nil, err
-            }
+			err := modulesRows.Scan(
+				&module.Id,
+				&module.Title,
+				&module.Content,
+				pq.Array(&attachments),
+				pq.Array(&videos),
+			)
+			if err != nil {
+				log.Error().Err(err).Msg("repo::GetAllSyllabus - Failed to scan module data")
+				return nil, err
+			}
 
-            module.Attachments = attachments
-            module.Videos = videos
-            modules = append(modules, module)
-        }
+			module.Attachments = attachments
+			module.Videos = videos
+			modules = append(modules, module)
+		}
 
-        modulesRows.Close()
+		modulesRows.Close()
 
-        material.Modules = modules
-        materials = append(materials, material)
-    }
+		material.Modules = modules
+		materials = append(materials, material)
+	}
 
-    if err := materialsRows.Err(); err != nil {
-        log.Error().Err(err).Msg("repo::GetAllSyllabus - Error occurred during materials iteration")
-        return nil, err
-    }
+	if err := materialsRows.Err(); err != nil {
+		log.Error().Err(err).Msg("repo::GetAllSyllabus - Error occurred during materials iteration")
+		return nil, err
+	}
 
-    return materials, nil
+	return materials, nil
 }
-
 
 func (r *classRepository) GetOverviewClassById(ctx context.Context, req *entity.GetOverviewClassByIdRequest) (*entity.GetOverviewClassByIdResponse, error) {
 	var res = new(entity.GetOverviewClassByIdResponse)
@@ -477,4 +476,96 @@ func (r *classRepository) DeleteStudentClass(ctx context.Context, req *entity.De
 	}
 
 	return nil
+}
+
+func (r *classRepository) GetAllStudentNotEnrolledClass(ctx context.Context, req *entity.GetAllUserNotEnrolledClassRequest) (*entity.GetAllUserNotEnrolledClassResponse, error) {
+	query := `
+        SELECT 
+            u.name,
+            u.email,
+            u.image_url
+        FROM 
+            users u
+        LEFT JOIN 
+            users_classes uc ON u.id = uc.user_id AND uc.class_id = $1
+        WHERE 
+            uc.user_id IS NULL;
+    `
+
+	var students []entity.GetUserNotEnrolledClassResponse
+
+	rows, err := r.db.QueryContext(ctx, query, req.ClassId)
+	if err != nil {
+		log.Error().Err(err).Any("payload", req).Msg("repo::GetAllStudentsNotEnrolledClass - Failed to get all student not enrolled class")
+		return nil, errmsg.NewCustomErrors(500, errmsg.WithMessage("Internal server error"))
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var student entity.GetUserNotEnrolledClassResponse
+		if err := rows.Scan(&student.Name, &student.Email, &student.ImageUrl); err != nil {
+			log.Error().Err(err).Any("payload", req).Msg("repo::GetAllStudentsNotEnrolledClass - Failed to get all student not enrolled class")
+			return nil, errmsg.NewCustomErrors(500, errmsg.WithMessage("Internal server error"))
+		}
+		students = append(students, student)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Error().Err(err).Any("payload", req).Msg("repo::GetAllStudentsNotEnrolledClass - Failed to get all student not enrolled class")
+		return nil, errmsg.NewCustomErrors(500, errmsg.WithMessage("Internal server error"))
+	}
+
+	response := &entity.GetAllUserNotEnrolledClassResponse{
+		Total:    len(students),
+		Students: students,
+	}
+
+	return response, nil
+}
+
+func (r *classRepository) CheckEnrollment(ctx context.Context, req *entity.AddUsersToClassRequest) error {
+	query := `
+        SELECT COUNT(*) 
+        FROM users_classes 
+        WHERE user_id = $1 AND class_id = $2
+    `
+
+	var count int
+
+	err := r.db.QueryRowContext(ctx, query, req.StudentId, req.ClassId).Scan(&count)
+	if err != nil {
+		log.Error().Err(err).Any("payload", req).Msg("repo::GetAllStudentsNotEnrolledClass - Failed to get all student not enrolled class")
+		return errmsg.NewCustomErrors(400, errmsg.WithMessage("Id user not valid"))
+	}
+
+	if count > 0 {
+		return errmsg.NewCustomErrors(400, errmsg.WithMessage("User is already enrolled in this class"))
+	}
+
+	return nil
+}
+
+func (r *classRepository) AddUserToClass(ctx context.Context, req *entity.AddUsersToClassRequest) (*entity.AddUsersToClassResponse, error) {
+	query := `
+        INSERT INTO users_classes (user_id, class_id, enrollment_status, created_at, updated_at)
+        VALUES ($1, $2, 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        RETURNING id, user_id, class_id, 'active' AS enrollment_status, created_at, updated_at;
+    `
+
+	var response entity.AddUsersToClassResponse
+
+	err := r.db.QueryRowContext(ctx, query, req.StudentId, req.ClassId).Scan(
+		&response.Id,
+		&response.StudentId,
+		&response.ClassId,
+		&response.StatusEnrollment,
+		&response.CreatedAt,
+		&response.UpdatedAt,
+	)
+	if err != nil {
+		log.Error().Err(err).Any("payload", req).Msg("repo::GetAllStudentsNotEnrolledClass - Failed to get all student not enrolled class")
+		return nil, errmsg.NewCustomErrors(400, errmsg.WithMessage("Id user not valid"))
+	}
+
+	return &response, nil
 }

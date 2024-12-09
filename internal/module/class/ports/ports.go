@@ -17,6 +17,9 @@ type ClassRepository interface {
 	DeleteStudentClass(ctx context.Context, req *entity.DeleteUsersClassRequest) error
 	FindClass(ctx context.Context, id string) error
 	GetAllSyllabus(ctx context.Context, classId string) ([]entity.GetMaterialResponse, error)
+	GetAllStudentNotEnrolledClass(ctx context.Context, req *entity.GetAllUserNotEnrolledClassRequest) (*entity.GetAllUserNotEnrolledClassResponse, error)
+	AddUserToClass(ctx context.Context, req *entity.AddUsersToClassRequest) (*entity.AddUsersToClassResponse, error)
+	CheckEnrollment(ctx context.Context, req *entity.AddUsersToClassRequest) error
 }
 
 type ClassService interface {
@@ -29,4 +32,6 @@ type ClassService interface {
 	UpdateVisibilityClass(ctx context.Context, req *entity.UpdateVisibilityClassRequest) (*entity.UpdateVisibilityClassResponse, error)
 	GetAllUsersEnrolledClass(ctx context.Context, req *entity.GetAllUsersEnrolledClassRequest) (*entity.GetAllUsersEnrolledClassResponse, error)
 	DeleteStudentClass(ctx context.Context, req *entity.DeleteUsersClassRequest) error
+	GetAllStudentNotEnrolledClass(ctx context.Context, req *entity.GetAllUserNotEnrolledClassRequest) (*entity.GetAllUserNotEnrolledClassResponse, error)
+	AddUserToClass(ctx context.Context, req *entity.AddUsersToClassRequest) (*entity.AddUsersToClassResponse, error)
 }
