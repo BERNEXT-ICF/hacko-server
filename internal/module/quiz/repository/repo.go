@@ -105,3 +105,20 @@ func (r *quizRepository) CreateQuestionQuiz(ctx context.Context, req *entity.Cre
 
     return &resp, nil
 }
+
+func (r *quizRepository) GetAllQuiz(ctx context.Context, req *entity.GetAllQuizRequest) ([]entity.GetAllQuizResponse, error) {
+	query := `
+		SELECT id, title, status, created_at, updated_at
+		FROM quiz
+		WHERE class_id = $1
+	`
+
+	var quizzes []entity.GetAllQuizResponse
+	err := r.db.SelectContext(ctx, &quizzes, query, req.ClassId)
+	if err != nil {
+        log.Error().Err(err).Any("payload", req).Msg("repo::GetAllQuiz - Failed Get All Quiz")
+		return nil, errmsg.NewCustomErrors(500, errmsg.WithMessage("Internal server error"))
+	}
+
+	return quizzes, nil
+}

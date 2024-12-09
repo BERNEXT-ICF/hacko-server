@@ -39,3 +39,16 @@ type CreateQuestionQuizResponse struct {
 	CreatedAt             time.Time       `json:"created_at" db:"created_at"`
 	UpdatedAt             time.Time       `json:"updated_at" db:"updated_at"`
 }
+
+type GetAllQuizRequest struct {
+	UserId  string `validate:"required"`
+	ClassId string `json:"class_id" validate:"required"`
+}
+
+type GetAllQuizResponse struct {
+	Id        string `json:"id" db:"id"`
+	Title     string `json:"title" db:"title"`
+	Status    string `json:"status" db:"status"`
+	CreatedAt string `json:"created_at" db:"created_at"`
+	UpdatedAt string `json:"updated_at" db:"updated_at"`
+}
