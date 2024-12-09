@@ -39,7 +39,24 @@ type GetAssignmentByClassIdResponse struct {
 }
 
 type GetAssignmentStatusRequest struct {
-	UserId       string	
+	UserId       string
 	ClassId      string
 	AssignmentId int
+}
+
+type GetAssignmentDetailsRequest struct {
+	UserId       string `validate:"required"`
+	AssignmentId int `json:"assignment_id"`
+}
+
+type GetAssignmentDetailsResponse struct {
+	Id             int    `json:"id" db:"title"`
+	Title          string `json:"title" db:"title"`
+	Description    string `json:"description" db:"description"`
+	DueDate        string `json:"due_date" db:"due_date"`
+	LinkSubmission *string `json:"link_submission" db:"link"`
+	Grade          *string `json:"grade_subission" db:"grade"`
+	Feedback       *string `json:"feedback_submission" db:"feedback"`
+	Status         *string `json:"status_submission" db:"status"`
+	SubmittedAt    *string `json:"submitted_at" db:"submitted_at"`
 }

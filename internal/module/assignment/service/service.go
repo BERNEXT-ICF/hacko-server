@@ -41,3 +41,12 @@ func (s *assignmentService) GetAllAssignmentByClassId(ctx context.Context, req *
 
 	return response, nil
 }
+
+func (s *assignmentService) GetAssignmentDetails(ctx context.Context, req *entity.GetAssignmentDetailsRequest) (*entity.GetAssignmentDetailsResponse, error) {
+	response, err := s.repo.GetAssignmentDetails(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
+}

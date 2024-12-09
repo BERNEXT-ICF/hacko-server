@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"hacko-app/internal/module/assignment/entity"
 	"hacko-app/internal/module/assignment/ports"
 	"hacko-app/pkg/errmsg"
@@ -116,11 +117,10 @@ func (r *assignmentRepository) GetAllAssignmentByClassId(ctx context.Context, re
 			return nil, err
 		}
 
-		// Memanggil GetAssignmentStatus dengan parameter yang tepat
 		status := r.GetAssignmentStatus(ctx, &entity.GetAssignmentStatusRequest{
 			ClassId:      req.ClassId,
-			AssignmentId: assignment.Id, // Menggunakan ID assignment untuk submission_id
-			UserId:       req.UserId,    // Misalkan Anda ingin menggunakan UserId dari request
+			AssignmentId: assignment.Id,
+			UserId:       req.UserId,
 		})
 
 		if status == "" {
@@ -152,11 +152,55 @@ func (r *assignmentRepository) GetAssignmentStatus(ctx context.Context, req *ent
 	if err != nil {
 		if err == sql.ErrNoRows {
 			log.Error().Err(err).Str("class_id", req.ClassId).Msg("repo::GetAssignmentStatus - No assignments found")
-			return "" // Mengembalikan string kosong jika tidak ada hasil
+			return ""
 		}
 		log.Error().Err(err).Str("class_id", req.ClassId).Msg("repo::GetAssignmentStatus - Failed to query status")
-		return "" // Mengembalikan string kosong jika ada error lain
+		return ""
 	}
 
 	return status
+}
+
+func (r *assignmentRepository) GetAssignmentDetails(ctx context.Context, req *entity.GetAssignmentDetailsRequest) (*entity.GetAssignmentDetailsResponse, error) {
+	query := `
+        SELECT 
+            a.id AS assignment_id,
+            a.title,
+            a.description,
+            a.due_date,
+            s.link AS link_submission,
+            s.grade AS grade_submission,
+            s.feedback AS feedback_submission,
+            s.status AS status_submission,
+            s.submitted_at
+        FROM 
+            assignments a
+        LEFT JOIN 
+            submissions s ON a.id = s.assignment_id AND s.student_id = $1
+        WHERE 
+            a.id = $2
+    `
+
+	var response entity.GetAssignmentDetailsResponse
+	err := r.db.QueryRowContext(ctx, query, req.UserId, req.AssignmentId).Scan(
+		&response.Id,
+		&response.Title,
+		&response.Description,
+		&response.DueDate,
+		&response.LinkSubmission,
+		&response.Grade,
+		&response.Feedback,
+		&response.Status,
+		&response.SubmittedAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Error().Any("assignment_id", req.AssignmentId).Msg("No assignment details found")
+			return nil, errmsg.NewCustomErrors(400, errmsg.WithMessage("Module with that id not found"))
+		}
+		log.Error().Err(err).Msg("Failed to get assignment details")
+		return nil, err
+	}
+
+	return &response, nil
 }
