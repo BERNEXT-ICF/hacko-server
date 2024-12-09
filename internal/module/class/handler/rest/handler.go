@@ -44,6 +44,7 @@ func (h *classHandler) Register(router fiber.Router) {
 	router.Patch("/class/:id", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "teacher"}), h.UpdateVisibilityClass)
 	router.Get("/class/:id/users", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "teacher"}), h.GetAllUsersEnrolledClass)
 	router.Delete("/class/:id/users/:studentId", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "teacher"}), h.DeleteStudentClass)
+	router.Get("/class/:classId/users-not-enrolled/", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "teacher"}), h.GetAllUsersNotEnrolledClass)
 }
 
 func (h *classHandler) CreateClassregister(c *fiber.Ctx) error {
@@ -315,4 +316,30 @@ func (h *classHandler) DeleteStudentClass(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(response.Success(nil, "Successfully to delete users from the class"))
+}
+
+func (h *classHandler) GetAllUsersNotEnrolledClass(c *fiber.Ctx) error {
+	var (
+		req = new(entity.GetAllUserNotEnrolledClassRequest)
+		ctx = c.Context()
+		v   = adapter.Adapters.Validator
+		l   = middleware.GetLocals(c)
+	)
+
+	req.UserId = l.GetUserId()
+	req.ClassId = c.Params("classId")
+
+	if err := v.Validate(req); err != nil {
+		log.Warn().Err(err).Msg("handler::GetAllStudentClass - Invalid request body")
+		code, errs := errmsg.Errors(err, req)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	res, err := h.service.GetAllStudentNotEnrolledClass(ctx, req)
+	if err != nil {
+		code, errs := errmsg.Errors(err, req)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response.Success(res, "Successfully to get all users from the class"))
 }

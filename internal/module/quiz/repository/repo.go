@@ -178,7 +178,7 @@ func (r *quizRepository) FindUsersCompletedQuiz(ctx context.Context, req *entity
 		return errmsg.NewCustomErrors(500, errmsg.WithMessage("Internal server error"))
 	}
 
-	return errmsg.NewCustomErrors(400, errmsg.WithMessage("Quiz already completed"))
+	return errmsg.NewCustomErrors(200, errmsg.WithMessage("Quiz already completed"))
 }
 
 func (r *quizRepository) SubmitQuiz(ctx context.Context, req *entity.SubmitQuizRequest) (*entity.SubmitQuizResponse, error) {
@@ -202,7 +202,7 @@ func (r *quizRepository) SubmitQuiz(ctx context.Context, req *entity.SubmitQuizR
 		return nil, errmsg.NewCustomErrors(500, errmsg.WithMessage("Internal server error"))
 	}
 
-    response.Status = "completed"
+	response.Status = "completed"
 
 	return &response, nil
 }

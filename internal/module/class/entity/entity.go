@@ -132,3 +132,19 @@ type DeleteUsersClassRequest struct {
 	ClassId   int    `json:"class_id" validate:"required"`
 	StudentId string `json:"student_id" validate:"required"`
 }
+
+type GetAllUserNotEnrolledClassRequest struct {
+	UserId 	string `validate:"required"`
+	ClassId string `json:"class_id" validate:"required"`
+}
+
+type GetUserNotEnrolledClassResponse struct {
+	Name string `json:"name" db:"name"`
+	Email string `json:"email" db:"email"`
+	ImageUrl *string `json:"image_url" db:"image_url"`
+}
+
+type GetAllUserNotEnrolledClassResponse struct {
+	Total int `json:"total"`
+	Students []GetUserNotEnrolledClassResponse
+}
