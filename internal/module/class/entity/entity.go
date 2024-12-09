@@ -134,17 +134,32 @@ type DeleteUsersClassRequest struct {
 }
 
 type GetAllUserNotEnrolledClassRequest struct {
-	UserId 	string `validate:"required"`
+	UserId  string `validate:"required"`
 	ClassId string `json:"class_id" validate:"required"`
 }
 
 type GetUserNotEnrolledClassResponse struct {
-	Name string `json:"name" db:"name"`
-	Email string `json:"email" db:"email"`
+	Name     string  `json:"name" db:"name"`
+	Email    string  `json:"email" db:"email"`
 	ImageUrl *string `json:"image_url" db:"image_url"`
 }
 
 type GetAllUserNotEnrolledClassResponse struct {
-	Total int `json:"total"`
+	Total    int `json:"total"`
 	Students []GetUserNotEnrolledClassResponse
+}
+
+type AddUsersToClassRequest struct {
+	UserId    string `json:"user_id" validate:"required"`
+	StudentId string `json:"student_id" validate:"required"`
+	ClassId   string `json:"class_id" validate:"required"`
+}
+
+type AddUsersToClassResponse struct {
+	Id               string    `json:"id" db:"id"`
+	StudentId        string    `json:"student_id" db:"user_id"`
+	ClassId          string    `json:"class_id" db:"class_id"`
+	StatusEnrollment string    `json:"status_enrollment" db:"status_enrollment"`
+	CreatedAt        time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at" db:"updated_at"`
 }

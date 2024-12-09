@@ -522,3 +522,50 @@ func (r *classRepository) GetAllStudentNotEnrolledClass(ctx context.Context, req
 
 	return response, nil
 }
+
+func (r *classRepository) CheckEnrollment(ctx context.Context, req *entity.AddUsersToClassRequest) error {
+	query := `
+        SELECT COUNT(*) 
+        FROM users_classes 
+        WHERE user_id = $1 AND class_id = $2
+    `
+
+	var count int
+
+	err := r.db.QueryRowContext(ctx, query, req.StudentId, req.ClassId).Scan(&count)
+	if err != nil {
+		log.Error().Err(err).Any("payload", req).Msg("repo::GetAllStudentsNotEnrolledClass - Failed to get all student not enrolled class")
+		return errmsg.NewCustomErrors(400, errmsg.WithMessage("Id user not valid"))
+	}
+
+	if count > 0 {
+		return errmsg.NewCustomErrors(400, errmsg.WithMessage("User is already enrolled in this class"))
+	}
+
+	return nil
+}
+
+func (r *classRepository) AddUserToClass(ctx context.Context, req *entity.AddUsersToClassRequest) (*entity.AddUsersToClassResponse, error) {
+	query := `
+        INSERT INTO users_classes (user_id, class_id, enrollment_status, created_at, updated_at)
+        VALUES ($1, $2, 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        RETURNING id, user_id, class_id, 'active' AS enrollment_status, created_at, updated_at;
+    `
+
+	var response entity.AddUsersToClassResponse
+
+	err := r.db.QueryRowContext(ctx, query, req.StudentId, req.ClassId).Scan(
+		&response.Id,
+		&response.StudentId,
+		&response.ClassId,
+		&response.StatusEnrollment,
+		&response.CreatedAt,
+		&response.UpdatedAt,
+	)
+	if err != nil {
+		log.Error().Err(err).Any("payload", req).Msg("repo::GetAllStudentsNotEnrolledClass - Failed to get all student not enrolled class")
+		return nil, errmsg.NewCustomErrors(400, errmsg.WithMessage("Id user not valid"))
+	}
+
+	return &response, nil
+}

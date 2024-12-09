@@ -130,3 +130,20 @@ func (s *classService) GetAllStudentNotEnrolledClass(ctx context.Context, req *e
 
 	return res, nil
 }
+
+func (s *classService) AddUserToClass(ctx context.Context, req *entity.AddUsersToClassRequest) (*entity.AddUsersToClassResponse, error) {
+	if err := s.repo.FindClass(ctx, req.ClassId); err != nil {
+		return nil, err
+	}
+
+	if err := s.repo.CheckEnrollment(ctx, req); err != nil {
+		return nil, err
+	}
+
+	res, err := s.repo.AddUserToClass(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
