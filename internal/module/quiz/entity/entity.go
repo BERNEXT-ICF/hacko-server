@@ -52,3 +52,22 @@ type GetAllQuizResponse struct {
 	CreatedAt string `json:"created_at" db:"created_at"`
 	UpdatedAt string `json:"updated_at" db:"updated_at"`
 }
+
+type GetDetailsQuizRequset struct {
+	QuizId int `json:"quiz_id" validate:"required"`
+}
+
+type GetQuestionQuizResponse struct {
+	Id        string          `json:"id" db:"id"`
+	Type      string          `json:"type" db:"type"`
+	Question  string          `json:"question" db:"question"`
+	Answers   json.RawMessage `json:"answers" db:"answers"`
+	CreatedAt string          `json:"created_at" db:"created_at"`
+	UpdatedAt string          `json:"updated_at" db:"updated_at"`
+}
+
+type GetDetailsQuizResponse struct {
+	Id       string                    `json:"id" db:"id"`
+	Title    string                    `json:"title" db:"title"`
+	Question []GetQuestionQuizResponse `json:"question"`
+}
