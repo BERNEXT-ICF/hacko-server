@@ -71,3 +71,15 @@ type GetDetailsQuizResponse struct {
 	Title    string                    `json:"title" db:"title"`
 	Question []GetQuestionQuizResponse `json:"question"`
 }
+
+type SubmitQuizRequest struct {
+	QuizId int    `json:"quiz_id" validate:"required"`
+	UserId string `json:"user_id" validate:"required"`
+}
+type SubmitQuizResponse struct {
+	Id        int       `json:"id" db:"id"`
+	QuizId    string    `json:"quiz_id" validate:"required"`
+	UserId    string    `json:"user_id" validate:"required"`
+	Status    string    `json:"status"`
+	CreatedAt time.Time `json:"created_at" db:"created_at"`
+}

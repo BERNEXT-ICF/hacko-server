@@ -74,3 +74,22 @@ func (s *quizService) GetQuizDetails(ctx context.Context, req *entity.GetDetails
 
 	return response, nil
 }
+
+func (s *quizService) SubmitQuiz(ctx context.Context, req *entity.SubmitQuizRequest) (*entity.SubmitQuizResponse, error) {
+	err := s.repo.FindQuiz(ctx, req.QuizId)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.repo.FindUsersCompletedQuiz(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := s.repo.SubmitQuiz(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
+}
