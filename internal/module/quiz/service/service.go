@@ -60,3 +60,17 @@ func (s *quizService) GetAllQuiz(ctx context.Context, req *entity.GetAllQuizRequ
 
 	return response, nil
 }
+
+func (s *quizService) GetQuizDetails(ctx context.Context, req *entity.GetDetailsQuizRequset) (*entity.GetDetailsQuizResponse, error) {
+	err := s.repo.FindQuiz(ctx, req.QuizId)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := s.repo.GetDetailsQuiz(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
+}

@@ -56,8 +56,8 @@ func (r *quizRepository) CreateQuiz(ctx context.Context, req *entity.CreateQuizR
 	return &res, nil
 }
 
-func (r *quizRepository) FindQuiz(ctx context.Context, req int) error{
-    query := `SELECT id FROM quiz WHERE id = $1`
+func (r *quizRepository) FindQuiz(ctx context.Context, req int) error {
+	query := `SELECT id FROM quiz WHERE id = $1`
 
 	var classId string
 	err := r.db.QueryRowContext(ctx, query, req).Scan(&classId)
@@ -75,35 +75,35 @@ func (r *quizRepository) FindQuiz(ctx context.Context, req int) error{
 }
 
 func (r *quizRepository) CreateQuestionQuiz(ctx context.Context, req *entity.CreateQuestionQuizRequest) (*entity.CreateQuestionQuizResponse, error) {
-    query := `
+	query := `
         INSERT INTO questions_quiz (quiz_id, creator_question_quiz_id, type, question, answers, created_at, updated_at)
         VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         RETURNING id, creator_question_quiz_id, type, question, answers, created_at, updated_at;
     `
 
-    var resp entity.CreateQuestionQuizResponse
-    err := r.db.QueryRowContext(ctx, query,
-        req.QuizId,                  // quiz_id
-        req.UserId,                  // creator_quiz_id (user ID)
-        req.Type,                    // type
-        req.Question,                // question
-        req.Answers,                 // answers (JSON)
-    ).Scan(
-        &resp.Id,
-        &resp.CreatorQuestionQuizId,
-        &resp.Type,
-        &resp.Question,
-        &resp.Answers,
-        &resp.CreatedAt,
-        &resp.UpdatedAt,
-    )
+	var resp entity.CreateQuestionQuizResponse
+	err := r.db.QueryRowContext(ctx, query,
+		req.QuizId,   // quiz_id
+		req.UserId,   // creator_quiz_id (user ID)
+		req.Type,     // type
+		req.Question, // question
+		req.Answers,  // answers (JSON)
+	).Scan(
+		&resp.Id,
+		&resp.CreatorQuestionQuizId,
+		&resp.Type,
+		&resp.Question,
+		&resp.Answers,
+		&resp.CreatedAt,
+		&resp.UpdatedAt,
+	)
 
-    if err != nil {
+	if err != nil {
 		log.Error().Err(err).Any("payload", req).Msg("repo::CreateQuestionQuiz - Failed create question quiz")
 		return nil, errmsg.NewCustomErrors(500, errmsg.WithMessage("Internal server error"))
 	}
 
-    return &resp, nil
+	return &resp, nil
 }
 
 func (r *quizRepository) GetAllQuiz(ctx context.Context, req *entity.GetAllQuizRequest) ([]entity.GetAllQuizResponse, error) {
@@ -116,9 +116,48 @@ func (r *quizRepository) GetAllQuiz(ctx context.Context, req *entity.GetAllQuizR
 	var quizzes []entity.GetAllQuizResponse
 	err := r.db.SelectContext(ctx, &quizzes, query, req.ClassId)
 	if err != nil {
-        log.Error().Err(err).Any("payload", req).Msg("repo::GetAllQuiz - Failed Get All Quiz")
+		log.Error().Err(err).Any("payload", req).Msg("repo::GetAllQuiz - Failed Get All Quiz")
 		return nil, errmsg.NewCustomErrors(500, errmsg.WithMessage("Internal server error"))
 	}
 
 	return quizzes, nil
+}
+
+func (r *quizRepository) GetDetailsQuiz(ctx context.Context, req *entity.GetDetailsQuizRequset) (*entity.GetDetailsQuizResponse, error) {
+	quizQuery := `
+		SELECT id, title
+		FROM quiz
+		WHERE id = $1
+	`
+	var quiz entity.GetDetailsQuizResponse
+	err := r.db.GetContext(ctx, &quiz, quizQuery, req.QuizId)
+	if err != nil {
+		if err == sql.ErrNoRows {
+            log.Error().Err(err).Any("payload", req).Msg("repo::GetAllQuiz - Quiz with that id not found")
+			return nil, errmsg.NewCustomErrors(404, errmsg.WithMessage("Quiz with that id not found"))
+		}
+        log.Error().Err(err).Any("payload", req).Msg("repo::GetAllQuiz - Quiz with that id not found")
+		return nil, errmsg.NewCustomErrors(500, errmsg.WithMessage("Internal server error"))
+	}
+
+	questionsQuery := `
+		SELECT id, type, question, answers, created_at, updated_at
+		FROM questions_quiz
+		WHERE quiz_id = $1
+	`
+	var questions []entity.GetQuestionQuizResponse
+	err = r.db.SelectContext(ctx, &questions, questionsQuery, req.QuizId)
+	if err != nil {
+		if err == sql.ErrNoRows {
+            log.Error().Err(err).Any("payload", req).Msg("repo::GetAllQuiz - Quiz with that id not found")
+			quiz.Question = []entity.GetQuestionQuizResponse{}
+		} else {
+            log.Error().Err(err).Any("payload", req).Msg("repo::GetAllQuiz - Quiz with that id not found")
+			return nil, err
+		}
+	} else {
+		quiz.Question = questions
+	}
+
+	return &quiz, nil
 }
