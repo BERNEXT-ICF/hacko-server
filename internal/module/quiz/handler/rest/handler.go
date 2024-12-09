@@ -36,6 +36,7 @@ func (h *quizHandler) Register(router fiber.Router) {
 	router.Post("/class/quiz/:quizId/question-quiz", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.CreateQuestionQuiz)
 	router.Get("/class/:classId/quiz", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.GetAllQuiz)
 	router.Get("/class/quiz/:quizId", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.GetQuizDetails)
+	router.Post("/class/quiz/:quizId", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.SubmitQuiz)
 }
 
 func (h *quizHandler) CreateQuiz(c *fiber.Ctx) error {
@@ -164,6 +165,41 @@ func (h *quizHandler) GetQuizDetails(c *fiber.Ctx) error {
 	}
 
 	res, err := h.service.GetQuizDetails(ctx, req)
+	if err != nil {
+		code, errs := errmsg.Errors[error](err)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(response.Success(res, ""))
+}
+
+func (h *quizHandler) SubmitQuiz(c *fiber.Ctx) error {
+	var (
+		req = new(entity.SubmitQuizRequest)
+		ctx = c.Context()
+		v   = adapter.Adapters.Validator
+		l   = middleware.GetLocals(c)
+	)
+
+	req.UserId = l.GetUserId()
+
+	id := c.Params("quizId")
+
+	quizId, err := strconv.Atoi(id) 
+	if err != nil {
+		log.Warn().Err(err).Msg("handler::SubmitQuiz - Failed to parse quizId")
+		return c.Status(fiber.StatusInternalServerError).JSON(response.Error(errmsg.NewCustomErrors(500, errmsg.WithMessage("Failed to parse quizId"))))
+	}
+
+	req.QuizId = quizId 
+
+	if err := v.Validate(req); err != nil {
+		log.Warn().Err(err).Msg("handler::SubmitQuiz - Invalid request body")
+		code, errs := errmsg.Errors(err, req)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	res, err := h.service.SubmitQuiz(ctx, req)
 	if err != nil {
 		code, errs := errmsg.Errors[error](err)
 		return c.Status(code).JSON(response.Error(errs))

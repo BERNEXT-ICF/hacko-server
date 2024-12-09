@@ -12,6 +12,8 @@ type QuizRepository interface {
 	CreateQuestionQuiz(ctx context.Context, req *entity.CreateQuestionQuizRequest) (*entity.CreateQuestionQuizResponse, error)
 	GetAllQuiz(ctx context.Context, req *entity.GetAllQuizRequest) ([]entity.GetAllQuizResponse, error)
 	GetDetailsQuiz(ctx context.Context, req *entity.GetDetailsQuizRequset) (*entity.GetDetailsQuizResponse, error)
+	FindUsersCompletedQuiz(ctx context.Context, req *entity.SubmitQuizRequest) error
+	SubmitQuiz(ctx context.Context, req *entity.SubmitQuizRequest) (*entity.SubmitQuizResponse, error)
 }
 
 type QuizService interface {
@@ -19,4 +21,5 @@ type QuizService interface {
 	CreateQuestionQuiz(ctx context.Context, req *entity.CreateQuestionQuizRequest) (*entity.CreateQuestionQuizResponse, error)
 	GetAllQuiz(ctx context.Context, req *entity.GetAllQuizRequest) ([]entity.GetAllQuizResponse, error)
 	GetQuizDetails(ctx context.Context, req *entity.GetDetailsQuizRequset) (*entity.GetDetailsQuizResponse, error)
+	SubmitQuiz(ctx context.Context, req *entity.SubmitQuizRequest) (*entity.SubmitQuizResponse, error)
 }

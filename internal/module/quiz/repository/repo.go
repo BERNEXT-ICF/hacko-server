@@ -133,10 +133,10 @@ func (r *quizRepository) GetDetailsQuiz(ctx context.Context, req *entity.GetDeta
 	err := r.db.GetContext(ctx, &quiz, quizQuery, req.QuizId)
 	if err != nil {
 		if err == sql.ErrNoRows {
-            log.Error().Err(err).Any("payload", req).Msg("repo::GetAllQuiz - Quiz with that id not found")
+			log.Error().Err(err).Any("payload", req).Msg("repo::GetAllQuiz - Quiz with that id not found")
 			return nil, errmsg.NewCustomErrors(404, errmsg.WithMessage("Quiz with that id not found"))
 		}
-        log.Error().Err(err).Any("payload", req).Msg("repo::GetAllQuiz - Quiz with that id not found")
+		log.Error().Err(err).Any("payload", req).Msg("repo::GetAllQuiz - Quiz with that id not found")
 		return nil, errmsg.NewCustomErrors(500, errmsg.WithMessage("Internal server error"))
 	}
 
@@ -149,10 +149,10 @@ func (r *quizRepository) GetDetailsQuiz(ctx context.Context, req *entity.GetDeta
 	err = r.db.SelectContext(ctx, &questions, questionsQuery, req.QuizId)
 	if err != nil {
 		if err == sql.ErrNoRows {
-            log.Error().Err(err).Any("payload", req).Msg("repo::GetAllQuiz - Quiz with that id not found")
+			log.Error().Err(err).Any("payload", req).Msg("repo::GetAllQuiz - Quiz with that id not found")
 			quiz.Question = []entity.GetQuestionQuizResponse{}
 		} else {
-            log.Error().Err(err).Any("payload", req).Msg("repo::GetAllQuiz - Quiz with that id not found")
+			log.Error().Err(err).Any("payload", req).Msg("repo::GetAllQuiz - Quiz with that id not found")
 			return nil, err
 		}
 	} else {
@@ -160,4 +160,49 @@ func (r *quizRepository) GetDetailsQuiz(ctx context.Context, req *entity.GetDeta
 	}
 
 	return &quiz, nil
+}
+
+func (r *quizRepository) FindUsersCompletedQuiz(ctx context.Context, req *entity.SubmitQuizRequest) error {
+	query := `SELECT quiz_id, user_id FROM users_completed_quiz WHERE user_id = $1 AND quiz_id = $2`
+
+	var quizID, userID string
+
+	err := r.db.QueryRowContext(ctx, query, req.UserId, req.QuizId).Scan(&quizID, &userID)
+
+	if err == sql.ErrNoRows {
+		return nil
+	}
+
+	if err != nil {
+		log.Error().Err(err).Any("payload", req).Msg("repo::FindUsersCompletedQuiz - Failed to query quiz")
+		return errmsg.NewCustomErrors(500, errmsg.WithMessage("Internal server error"))
+	}
+
+	return errmsg.NewCustomErrors(400, errmsg.WithMessage("Quiz already completed"))
+}
+
+func (r *quizRepository) SubmitQuiz(ctx context.Context, req *entity.SubmitQuizRequest) (*entity.SubmitQuizResponse, error) {
+
+	query := `
+        INSERT INTO users_completed_quiz (quiz_id, user_id)
+        VALUES ($1, $2)
+        RETURNING id, quiz_id, user_id, created_at
+    `
+
+	var response entity.SubmitQuizResponse
+	err := r.db.QueryRowContext(ctx, query, req.QuizId, req.UserId).Scan(
+		&response.Id,
+		&response.QuizId,
+		&response.UserId,
+		&response.CreatedAt,
+	)
+
+	if err != nil {
+		log.Error().Err(err).Any("payload", req).Msg("repo::SubmitQuiz - Quiz with that id not found")
+		return nil, errmsg.NewCustomErrors(500, errmsg.WithMessage("Internal server error"))
+	}
+
+    response.Status = "completed"
+
+	return &response, nil
 }
