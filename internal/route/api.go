@@ -2,12 +2,13 @@ package route
 
 import (
 	integration "hacko-app/internal/integration/oauth2google"
-	restUser "hacko-app/internal/module/user/handler/rest"
+	restAssignment "hacko-app/internal/module/assignment/handler/rest"
 	restClass "hacko-app/internal/module/class/handler/rest"
 	restMaterials "hacko-app/internal/module/materials/handler/rest"
 	restModules "hacko-app/internal/module/modules/handler/rest"
-	restAssignment "hacko-app/internal/module/assignment/handler/rest"
+	restQuiz "hacko-app/internal/module/quiz/handler/rest"
 	restSubmission "hacko-app/internal/module/submission/handler/rest"
+	restUser "hacko-app/internal/module/user/handler/rest"
 	"hacko-app/pkg/response"
 
 	"github.com/gofiber/fiber/v2"
@@ -26,6 +27,7 @@ func SetupRoutes(app *fiber.App) {
 	restModules.NewModulesHandler().Register(api)
 	restAssignment.NewAssignmentHandler().Register(api)
 	restSubmission.NewSubmissionHandler().Register(api)
+	restQuiz.NewQuizHandler().Register(api)
 
 	// fallback route
 	app.Use(func(c *fiber.Ctx) error {
