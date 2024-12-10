@@ -1,6 +1,8 @@
 package entity
 
-import "time"
+import (
+	"time"
+)
 
 type CreateClassRequest struct {
 	UserId      string `validate:"required"`
@@ -162,4 +164,29 @@ type AddUsersToClassResponse struct {
 	StatusEnrollment string    `json:"status_enrollment" db:"status_enrollment"`
 	CreatedAt        time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt        time.Time `json:"updated_at" db:"updated_at"`
+}
+
+type TrackModuleRequest struct {
+	UserId         string  `json:"user_id" validate:"required"`
+	ClassId        string  `json:"class_id" validate:"required"`
+	// UsersClassesId string  `json:"users_classes_id" validate:"required"`
+	MaterialId     string  `json:"material_id" validate:"required"`
+	ModuleId       string  `json:"module_id" validate:"required"`
+	// QuizId         *string `json:"quiz_id,omitempty"`
+	StatusProgress string  `json:"status_progress"`
+	Progress       *float64 `json:"progress"`
+}
+
+type TrackModuleResponse struct {
+	Id               int       `json:"id" db:"id"` 
+	UserId           string    `json:"user_id" db:"user_id"`
+	Progress         *float64   `json:"progress" db:"progress"`
+	StatusProgress   string    `json:"status_progress" db:"status_progress"`
+	CreatedAt        time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at" db:"updated_at"`
+}
+
+type GetProgressRequest struct {
+	UserId         string  `json:"user_id" validate:"required"`
+	ClassId        string  `json:"class_id" validate:"required"`
 }

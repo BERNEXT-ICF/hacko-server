@@ -3,6 +3,7 @@ package ports
 import (
 	"context"
 	"hacko-app/internal/module/class/entity"
+
 )
 
 type ClassRepository interface {
@@ -20,6 +21,8 @@ type ClassRepository interface {
 	GetAllStudentNotEnrolledClass(ctx context.Context, req *entity.GetAllUserNotEnrolledClassRequest) (*entity.GetAllUserNotEnrolledClassResponse, error)
 	AddUserToClass(ctx context.Context, req *entity.AddUsersToClassRequest) (*entity.AddUsersToClassResponse, error)
 	CheckEnrollment(ctx context.Context, req *entity.AddUsersToClassRequest) error
+	TrackModule(ctx context.Context, req *entity.TrackModuleRequest) (*entity.TrackModuleResponse, error)
+	GetProgress(ctx context.Context, req *entity.GetProgressRequest) (*float64, error)
 }
 
 type ClassService interface {
@@ -34,4 +37,5 @@ type ClassService interface {
 	DeleteStudentClass(ctx context.Context, req *entity.DeleteUsersClassRequest) error
 	GetAllStudentNotEnrolledClass(ctx context.Context, req *entity.GetAllUserNotEnrolledClassRequest) (*entity.GetAllUserNotEnrolledClassResponse, error)
 	AddUserToClass(ctx context.Context, req *entity.AddUsersToClassRequest) (*entity.AddUsersToClassResponse, error)
+	TrackModule(ctx context.Context, req *entity.TrackModuleRequest) (*entity.TrackModuleResponse, error)
 }
