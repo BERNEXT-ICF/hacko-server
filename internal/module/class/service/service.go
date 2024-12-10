@@ -147,3 +147,12 @@ func (s *classService) AddUserToClass(ctx context.Context, req *entity.AddUsersT
 
 	return res, nil
 }
+
+func (s *classService) TrackModule(ctx context.Context, req *entity.TrackModuleRequest) (*entity.TrackModuleResponse, error){
+	res, err := s.repo.TrackModule(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil	
+}

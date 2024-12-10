@@ -46,6 +46,7 @@ func (h *classHandler) Register(router fiber.Router) {
 	router.Delete("/class/:id/users/:studentId", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "teacher"}), h.DeleteStudentClass)
 	router.Get("/class/:classId/users-not-enrolled/", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "teacher"}), h.GetAllUsersNotEnrolledClass)
 	router.Post("/class/:classId/users/:studentId", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "teacher"}), h.AddUserToClass)
+	router.Post("/class/:classId/materials/:materialId/modules/:moduleId", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "teacher"}), h.TrackModule)
 }
 
 func (h *classHandler) CreateClassregister(c *fiber.Ctx) error {
@@ -370,4 +371,32 @@ func (h *classHandler) AddUserToClass(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(response.Success(res, "Successfully add user to this class"))
+}
+
+func (h *classHandler) TrackModule(c *fiber.Ctx) error {
+	var (
+		req = new(entity.TrackModuleRequest)
+		ctx = c.Context()
+		v   = adapter.Adapters.Validator
+		l   = middleware.GetLocals(c)
+	)
+
+	req.UserId = l.GetUserId()
+	req.ClassId = c.Params("classId")
+	req.MaterialId = c.Params("materialId")
+	req.ModuleId = c.Params("moduleId")
+
+	if err := v.Validate(req); err != nil {
+		log.Warn().Err(err).Msg("handler::AddUserToClass - Invalid request body")
+		code, errs := errmsg.Errors(err, req)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	res, err := h.service.TrackModule(ctx, req)
+	if err != nil {
+		code, errs := errmsg.Errors(err, req)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response.Success(res, "Successfully tracking progress"))
 }

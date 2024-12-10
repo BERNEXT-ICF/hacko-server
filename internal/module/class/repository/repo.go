@@ -569,3 +569,112 @@ func (r *classRepository) AddUserToClass(ctx context.Context, req *entity.AddUse
 
 	return &response, nil
 }
+
+func (r *classRepository) TrackModule(ctx context.Context, req *entity.TrackModuleRequest) (*entity.TrackModuleResponse, error) {
+	query := `
+		INSERT INTO users_progress (
+			user_id, class_id, material_id, module_id, status, created_at, updated_at
+		) VALUES (
+			$1, $2, $3, $4, $5, NOW(), NOW()
+		)
+		RETURNING id, user_id, progress, status, created_at, updated_at;
+	`
+	req.StatusProgress = "done"
+
+	// Eksekusi query
+	row := r.db.QueryRowContext(ctx, query,
+		req.UserId,
+		req.ClassId,
+		// req.UsersClassesId,
+		req.MaterialId,
+		req.ModuleId,
+		// req.QuizId,
+		req.StatusProgress,
+		// req.Progress,
+	)
+
+	// Menyiapkan respons
+	var res entity.TrackModuleResponse
+	err := row.Scan(
+		&res.Id,
+		&res.UserId,
+		&res.Progress,
+		&res.StatusProgress,
+		&res.CreatedAt,
+		&res.UpdatedAt,
+	)
+	if err != nil {
+		pqErr, ok := err.(*pq.Error)
+		if !ok {
+			log.Error().Err(err).Any("payload", req).Msg("repo::TrackModule - Failed to track module")
+			return nil, err
+		}
+
+		switch pqErr.Code.Name() {
+		case "foreign_key_violation":
+			log.Warn().Msg("repo::TrackModule - Class, Materials, Module, or user with the ID not found")
+			return nil, errmsg.NewCustomErrors(409, errmsg.WithMessage("Invalid class ID, material ID, module ID, or user ID"))
+		default:
+			log.Error().Err(err).Any("payload", req).Msg("repo::TrackModule - Unhandled pq.Error")
+			return nil, err
+		}
+	}
+
+	progressReq := &entity.GetProgressRequest{
+		UserId:  req.UserId,
+		ClassId: req.ClassId,
+	}
+
+	progress, err := r.GetProgress(ctx, progressReq)
+	if err != nil {
+		log.Error().Err(err).Any("payload", progressReq).Msg("repo::TrackModule - Failed to calculate progress")
+		return nil, err
+	}
+
+	// Update progress ke database jika perlu
+	updateQuery := `
+		UPDATE users_progress
+		SET progress = $1, updated_at = NOW()
+		WHERE user_id = $2 AND class_id = $3;
+	`
+	_, err = r.db.ExecContext(ctx, updateQuery, progress, req.UserId, req.ClassId)
+	if err != nil {
+		log.Error().Err(err).Msg("repo::TrackModule - Failed to update user progress")
+		return nil, err
+	}
+
+	res.Progress = progress
+	return &res, nil
+}
+
+func (r *classRepository) GetProgress(ctx context.Context, req *entity.GetProgressRequest) (*float64, error) {
+	query := `
+		SELECT 
+			COUNT(DISTINCT m.id) AS total_modules,
+			COUNT(DISTINCT up.module_id) FILTER (WHERE up.status = 'done') AS completed_modules
+		FROM 
+			class c
+		JOIN 
+			materials mat ON c.id = mat.class_id
+		JOIN 
+			modules m ON mat.id = m.materials_id
+		LEFT JOIN 
+			users_progress up ON m.id = up.module_id AND up.user_id = $1
+		WHERE 
+			c.id = $2;
+	`
+
+	var totalModules, completedModules int
+	err := r.db.QueryRowContext(ctx, query, req.UserId, req.ClassId).Scan(&totalModules, &completedModules)
+	if err != nil {
+		log.Error().Err(err).Any("payload", req).Msg("repo::GetProgress - Failed to calculate progress")
+		return nil, err
+	}
+
+	progress := 0.0
+	if totalModules > 0 {
+		progress = (float64(completedModules) / float64(totalModules)) * 100
+	}
+
+	return &progress, nil
+}
