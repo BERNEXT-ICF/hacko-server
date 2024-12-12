@@ -30,7 +30,11 @@ func NewAssignmentHandler() *assignmentHandler {
 }
 
 func (h *assignmentHandler) Register(router fiber.Router) {
+	// admin routes
 	router.Post("/class/:classId/assignment", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.CreateAssignment)
+	router.Get("teacher/class/:classId/assignment", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.GetAllAssignmentByClassIdAdmin)
+
+	// user routes
 	router.Get("/class/:classId/assignment", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.GetAllAssignmentByClassId)
 	router.Get("/class/assignment/:assignmentId", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.GetAssignmentDetails)
 }
@@ -129,6 +133,33 @@ func (h *assignmentHandler) GetAssignmentDetails(c *fiber.Ctx) error{
 	}
 
 	res, err := h.service.GetAssignmentDetails(ctx, req)
+	if err != nil {
+		code, errs := errmsg.Errors[error](err)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(response.Success(res, ""))	
+}
+
+func (h *assignmentHandler) GetAllAssignmentByClassIdAdmin(c *fiber.Ctx) error{
+	var (
+		req = new(entity.GetAllAssignmentByClassIdAdminRequest)
+		ctx = c.Context()
+		v   = adapter.Adapters.Validator
+		l   = middleware.GetLocals(c)
+	)
+
+	req.UserId = l.GetUserId()
+
+	req.ClassId = c.Params("classId")
+
+	if err := v.Validate(req); err != nil {
+		log.Warn().Err(err).Msg("handler::GetAllAssignmentByClassIdAdmin - Invalid request body")
+		code, errs := errmsg.Errors(err, req)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	res, err := h.service.GetAllAssignmentByClassIdAdmin(ctx, req)
 	if err != nil {
 		code, errs := errmsg.Errors[error](err)
 		return c.Status(code).JSON(response.Error(errs))

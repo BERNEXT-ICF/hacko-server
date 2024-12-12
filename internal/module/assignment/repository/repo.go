@@ -204,3 +204,46 @@ func (r *assignmentRepository) GetAssignmentDetails(ctx context.Context, req *en
 
 	return &response, nil
 }
+
+func (r *assignmentRepository) GetAllAssignmentByClassIdAdmin(ctx context.Context, req *entity.GetAllAssignmentByClassIdAdminRequest) (*[]entity.GetAllAssignmentByClassIdAdminResponse, error){
+	query := `
+        SELECT id, creator_assignment_id, class_id, title, description, due_date, created_at, updated_at
+        FROM assignments
+        WHERE class_id = $1;
+    `
+
+	rows, err := r.db.QueryContext(ctx, query, req.ClassId)
+	if err != nil {
+		log.Error().Err(err).Str("class_id", req.ClassId).Msg("repo::GetAllAssignmentByClassIdAdmin - Failed to query assignments")
+		return nil, err
+	}
+	defer rows.Close()
+
+	var assignments []entity.GetAllAssignmentByClassIdAdminResponse
+	for rows.Next() {
+		var assignment entity.GetAllAssignmentByClassIdAdminResponse
+		err := rows.Scan(
+			&assignment.Id,
+			&assignment.CreatorAssignmentId,
+			&assignment.ClassId,
+			&assignment.Title,
+			&assignment.Description,
+			&assignment.DueDate,
+			&assignment.CreatedAt,
+			&assignment.UpdatedAt,
+		)
+		if err != nil {
+			log.Error().Err(err).Msg("repo::GetAllAssignmentByClassIdAdmin - Failed to scan assignment")
+			return nil, err
+		}
+
+		assignments = append(assignments, assignment)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Error().Err(err).Msg("repo::GetAllAssignmentByClassIdAdmin - Error during rows iteration")
+		return nil, err
+	}
+
+	return &assignments, nil
+}
