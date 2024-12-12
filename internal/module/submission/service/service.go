@@ -32,3 +32,12 @@ func (s *submissionService) SubmitAssignment(ctx context.Context, req *entity.Su
 
 	return response, nil
 }
+
+func (s *submissionService) GetSubmissionDetails(ctx context.Context, req *entity.GetSubmissionDetailsRequest) (*entity.GetSubmissionDetailsResponse, error){
+	response, err := s.repo.GetSubmissionDetails(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
+}

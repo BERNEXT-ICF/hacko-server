@@ -32,8 +32,11 @@ func NewSubmissionHandler() *submissionHandler {
 
 
 func (h *submissionHandler) Register(router fiber.Router) {
+	// user routes
 	router.Post("/class/assignment/:assignmentId/submission", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.SubmitAssignment)
-	// router.Get("/class/:classId/assignment", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.GetAllAssignmentByClassId)
+
+	// admin routes
+	router.Get("/class/assignment/submission/:submissionId", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.GetSubmissionDetails)
 }
 
 func (h *submissionHandler) SubmitAssignment(c *fiber.Ctx) error {
@@ -62,6 +65,35 @@ func (h *submissionHandler) SubmitAssignment(c *fiber.Ctx) error {
 	}
 
 	res, err := h.service.SubmitAssignment(ctx, req)
+	if err != nil {
+		code, errs := errmsg.Errors[error](err)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(response.Success(res, ""))
+}
+
+func (h *submissionHandler) GetSubmissionDetails(c *fiber.Ctx) error {
+	var (
+		req = new(entity.GetSubmissionDetailsRequest)
+		ctx = c.Context()
+		v   = adapter.Adapters.Validator
+		l   = middleware.GetLocals(c)
+	)
+
+	req.UserId = l.GetUserId()
+
+	id := c.Params("submissionId")
+
+	req.SubmissionId = id
+
+	if err := v.Validate(req); err != nil {
+		log.Warn().Err(err).Msg("handler::GetSubmissionDetails - Invalid request body")
+		code, errs := errmsg.Errors(err, req)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	res, err := h.service.GetSubmissionDetails(ctx, req)
 	if err != nil {
 		code, errs := errmsg.Errors[error](err)
 		return c.Status(code).JSON(response.Error(errs))
