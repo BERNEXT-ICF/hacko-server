@@ -13,9 +13,10 @@ type AssignmentRepository interface {
 	// admin contract
 	CreateAssignment(ctx context.Context, req *entity.CreateAssignmentRequest) (*entity.CreateAssignmentResponse, error)
 	GetAllAssignmentByClassIdAdmin(ctx context.Context, req *entity.GetAllAssignmentByClassIdAdminRequest) (*[]entity.GetAllAssignmentByClassIdAdminResponse, error)
-	
+	GetAssignmentDetailsAdmin(ctx context.Context, req *entity.GetAssignmentDetailsAdminRequest) (*entity.GetAssignmentDetailsAdminResponse, error)
+
 	// user contract
-	GetAssignmentDetails(ctx context.Context, req *entity.GetAssignmentDetailsRequest)(*entity.GetAssignmentDetailsResponse, error)
+	GetAssignmentDetails(ctx context.Context, req *entity.GetAssignmentDetailsRequest) (*entity.GetAssignmentDetailsResponse, error)
 	GetAllAssignmentByClassId(ctx context.Context, req *entity.GetAllAssignmentByClassIdRequest) ([]entity.GetAssignmentByClassIdResponse, error)
 }
 
@@ -23,8 +24,9 @@ type AssignmentService interface {
 	// admin contract
 	CreateAssignment(ctx context.Context, req *entity.CreateAssignmentRequest) (*entity.CreateAssignmentResponse, error)
 	GetAllAssignmentByClassIdAdmin(ctx context.Context, req *entity.GetAllAssignmentByClassIdAdminRequest) (*[]entity.GetAllAssignmentByClassIdAdminResponse, error)
+	GetAssignmentDetailsAdmin(ctx context.Context, req *entity.GetAssignmentDetailsAdminRequest) (*entity.GetAssignmentDetailsAdminResponse, error)
 
 	// user contract
 	GetAllAssignmentByClassId(ctx context.Context, req *entity.GetAllAssignmentByClassIdRequest) ([]entity.GetAssignmentByClassIdResponse, error)
-	GetAssignmentDetails(ctx context.Context, req *entity.GetAssignmentDetailsRequest)(*entity.GetAssignmentDetailsResponse, error)
+	GetAssignmentDetails(ctx context.Context, req *entity.GetAssignmentDetailsRequest) (*entity.GetAssignmentDetailsResponse, error)
 }

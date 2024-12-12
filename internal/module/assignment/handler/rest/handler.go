@@ -33,6 +33,7 @@ func (h *assignmentHandler) Register(router fiber.Router) {
 	// admin routes
 	router.Post("/class/:classId/assignment", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.CreateAssignment)
 	router.Get("teacher/class/:classId/assignment", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.GetAllAssignmentByClassIdAdmin)
+	router.Get("teacher/class/:classId/assignment/:assignmentId", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.GetAssignmentDetailsAdmin)
 
 	// user routes
 	router.Get("/class/:classId/assignment", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.GetAllAssignmentByClassId)
@@ -160,6 +161,41 @@ func (h *assignmentHandler) GetAllAssignmentByClassIdAdmin(c *fiber.Ctx) error{
 	}
 
 	res, err := h.service.GetAllAssignmentByClassIdAdmin(ctx, req)
+	if err != nil {
+		code, errs := errmsg.Errors[error](err)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(response.Success(res, ""))	
+}
+
+func (h *assignmentHandler) GetAssignmentDetailsAdmin(c *fiber.Ctx) error{
+	var (
+		req = new(entity.GetAssignmentDetailsAdminRequest)
+		ctx = c.Context()
+		v   = adapter.Adapters.Validator
+		l   = middleware.GetLocals(c)
+	)
+
+	req.UserId = l.GetUserId()
+
+	id := c.Params("assignmentId")
+
+	reqId, err := strconv.Atoi(id)
+	if err != nil {
+		log.Warn().Err(err).Msg("handler::GetAssignmentDetailsAdmin - Failed to parsing id class")
+		return c.Status(fiber.StatusInternalServerError).JSON(response.Error(errmsg.NewCustomErrors(500, errmsg.WithMessage("Failed to parse params id class"))))
+	}
+
+	req.AssignmentId = reqId
+
+	if err := v.Validate(req); err != nil {
+		log.Warn().Err(err).Msg("handler::GetAssignmentDetailsAdmin - Invalid request body")
+		code, errs := errmsg.Errors(err, req)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	res, err := h.service.GetAssignmentDetailsAdmin(ctx, req)
 	if err != nil {
 		code, errs := errmsg.Errors[error](err)
 		return c.Status(code).JSON(response.Error(errs))

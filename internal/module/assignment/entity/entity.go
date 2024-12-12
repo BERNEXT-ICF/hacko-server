@@ -84,15 +84,17 @@ type GetAssignmentDetailsAdminRequest struct {
 
 type GetSubmissionResponse struct {
 	Name        string `json:"name" db:"name"`
-	Image       string `json:"image" db:"image_url"`
+	Image       *string `json:"image" db:"image"`
 	Status      string `json:"status" db:"status"`
 	SubmittedAt string `json:"submitted_at" db:"submitted_at"`
 }
 
 type GetAssignmentDetailsAdminResponse struct {
-	Id            int    `json:"id" db:"title"`
+	Id            int    `json:"id" db:"id"`
 	Title         string `json:"title" db:"title"`
 	Description   string `json:"description" db:"description"`
 	DueDate       string `json:"due_date" db:"due_date"`
 	AllSubmission []GetSubmissionResponse
+	CreatedAt time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 }

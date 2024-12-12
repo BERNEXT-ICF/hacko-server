@@ -59,3 +59,12 @@ func (s *assignmentService) GetAllAssignmentByClassIdAdmin(ctx context.Context, 
 
 	return response, nil
 }
+
+func (s *assignmentService) GetAssignmentDetailsAdmin(ctx context.Context, req *entity.GetAssignmentDetailsAdminRequest) (*entity.GetAssignmentDetailsAdminResponse, error){
+	response, err := s.repo.GetAssignmentDetailsAdmin(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil	
+}
