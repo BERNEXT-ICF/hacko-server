@@ -54,7 +54,7 @@ func RunServer(cmd *flag.FlagSet, args []string) {
 	}
 
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "http://localhost:3603, http://localhost:3000", // Hanya mengizinkan frontend
+		AllowOrigins: "http://localhost:3603, http://localhost:3000, http://localhost:3604", // Hanya mengizinkan frontend
 		AllowMethods: "GET,POST,PUT,DELETE,PATCH,OPTIONS,HEAD",
 		AllowHeaders: "Origin,Content-Type,Accept,Content-Length,Accept-Language,Accept-Encoding,Connection,Access-Control-Allow-Origin,Authorization",
 		AllowCredentials: true, 
