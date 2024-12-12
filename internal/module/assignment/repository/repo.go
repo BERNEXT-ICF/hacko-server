@@ -271,6 +271,7 @@ func (r *assignmentRepository) GetAssignmentDetailsAdmin(ctx context.Context, re
 	var submissions []entity.GetSubmissionResponse
 	submissionQuery := `
 			SELECT 
+				s.id,
 				u.name AS name, 
 				u.image_url AS image, 
 				s.status AS status, 

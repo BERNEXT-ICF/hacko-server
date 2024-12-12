@@ -37,6 +37,7 @@ func (h *submissionHandler) Register(router fiber.Router) {
 
 	// admin routes
 	router.Get("/class/assignment/submission/:submissionId", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.GetSubmissionDetails)
+	router.Post("/class/assignment/submission/:submissionId", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.GradingSubmission)
 }
 
 func (h *submissionHandler) SubmitAssignment(c *fiber.Ctx) error {
@@ -94,6 +95,40 @@ func (h *submissionHandler) GetSubmissionDetails(c *fiber.Ctx) error {
 	}
 
 	res, err := h.service.GetSubmissionDetails(ctx, req)
+	if err != nil {
+		code, errs := errmsg.Errors[error](err)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response.Success(res, ""))
+}
+
+func (h *submissionHandler) GradingSubmission(c *fiber.Ctx) error {
+	var (
+		req = new(entity.GradingSubmissionRequest)
+		ctx = c.Context()
+		v   = adapter.Adapters.Validator
+		l   = middleware.GetLocals(c)
+	)
+
+	req.UserId = l.GetUserId()
+
+	id := c.Params("submissionId")
+
+	req.SubmissionId = id
+
+	if err := c.BodyParser(req); err != nil {
+		log.Warn().Err(err).Msg("handler::GradingSubmission - Failed to parse request body")
+		return c.Status(fiber.StatusBadRequest).JSON(response.Error(err))
+	}
+
+	if err := v.Validate(req); err != nil {
+		log.Warn().Err(err).Msg("handler::GradingSubmission - Invalid request body")
+		code, errs := errmsg.Errors(err, req)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	res, err := h.service.GradingSubmission(ctx, req)
 	if err != nil {
 		code, errs := errmsg.Errors[error](err)
 		return c.Status(code).JSON(response.Error(errs))

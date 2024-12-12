@@ -104,7 +104,7 @@ func (h *assignmentHandler) GetAllAssignmentByClassId(c *fiber.Ctx) error{
 		return c.Status(code).JSON(response.Error(errs))
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(response.Success(res, ""))	
+	return c.Status(fiber.StatusOK).JSON(response.Success(res, ""))	
 }
 
 func (h *assignmentHandler) GetAssignmentDetails(c *fiber.Ctx) error{
@@ -139,7 +139,7 @@ func (h *assignmentHandler) GetAssignmentDetails(c *fiber.Ctx) error{
 		return c.Status(code).JSON(response.Error(errs))
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(response.Success(res, ""))	
+	return c.Status(fiber.StatusOK).JSON(response.Success(res, ""))	
 }
 
 func (h *assignmentHandler) GetAllAssignmentByClassIdAdmin(c *fiber.Ctx) error{
@@ -166,7 +166,7 @@ func (h *assignmentHandler) GetAllAssignmentByClassIdAdmin(c *fiber.Ctx) error{
 		return c.Status(code).JSON(response.Error(errs))
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(response.Success(res, ""))	
+	return c.Status(fiber.StatusOK).JSON(response.Success(res, ""))	
 }
 
 func (h *assignmentHandler) GetAssignmentDetailsAdmin(c *fiber.Ctx) error{
@@ -201,5 +201,5 @@ func (h *assignmentHandler) GetAssignmentDetailsAdmin(c *fiber.Ctx) error{
 		return c.Status(code).JSON(response.Error(errs))
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(response.Success(res, ""))	
+	return c.Status(fiber.StatusOK).JSON(response.Success(res, ""))	
 }

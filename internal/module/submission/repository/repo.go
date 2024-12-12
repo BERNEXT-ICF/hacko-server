@@ -115,3 +115,47 @@ func (r *submissionRepository) GetSubmissionDetails(ctx context.Context, req *en
 
     return &response, nil
 }
+
+func (r *submissionRepository) GradingSubmission(ctx context.Context, req *entity.GradingSubmissionRequest) (*entity.GradingSubmissionResponse, error) {
+    query := `
+        UPDATE 
+            submissions
+        SET 
+            grade = $1,
+            feedback = $2,
+            status = $3,
+            graded_at = NOW()
+        WHERE 
+            id = $4
+        RETURNING 
+            id, grade, feedback, status, graded_at
+    `
+
+    var response entity.GradingSubmissionResponse
+
+    err := r.db.QueryRowContext(
+        ctx,
+        query,
+        req.Grade,
+        req.Feedback,
+        req.Status,
+        req.SubmissionId,
+    ).Scan(
+        &response.Id,
+        &response.Grade,
+        &response.Feedback,
+        &response.Status,
+        &response.GradedAt,
+    )
+    if err != nil {
+        if errors.Is(err, sql.ErrNoRows) {
+            log.Error().Any("payload", req).Msg("Submission not found for grading")
+            return nil, errmsg.NewCustomErrors(400, errmsg.WithMessage("Submission not found"))
+        }
+        log.Error().Err(err).Msg("Failed to grade submission")
+        return nil, err
+    }
+
+    return &response, nil
+}
+

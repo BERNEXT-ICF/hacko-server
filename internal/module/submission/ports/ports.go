@@ -14,6 +14,7 @@ type SubmissionRepository interface {
 
 	// admin contract
 	GetSubmissionDetails(ctx context.Context, req *entity.GetSubmissionDetailsRequest) (*entity.GetSubmissionDetailsResponse, error)
+	GradingSubmission(ctx context.Context, req *entity.GradingSubmissionRequest) (*entity.GradingSubmissionResponse, error)
 }
 
 type SubmissionService interface {
@@ -22,4 +23,5 @@ type SubmissionService interface {
 
 	// admin contract
 	GetSubmissionDetails(ctx context.Context, req *entity.GetSubmissionDetailsRequest) (*entity.GetSubmissionDetailsResponse, error)
+	GradingSubmission(ctx context.Context, req *entity.GradingSubmissionRequest) (*entity.GradingSubmissionResponse, error)
 }

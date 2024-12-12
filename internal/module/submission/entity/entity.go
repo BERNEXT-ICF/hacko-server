@@ -23,21 +23,30 @@ type GetSubmissionDetailsRequest struct {
 }
 
 type GetSubmissionDetailsResponse struct {
-	Id           int       `json:"id" db:"id"`
-	SubmissionId string    `json:"submission_id" db:"submission_id"`
-	Name         string    `json:"name" db:"name"`
+	Id           int        `json:"id" db:"id"`
+	SubmissionId string     `json:"submission_id" db:"submission_id"`
+	Name         string     `json:"name" db:"name"`
 	Image        *string    `json:"image_url" db:"image_url"`
-	Link         string    `json:"link" db:"link"`
-	Status       string    `json:"status" db:"status"`
+	Link         string     `json:"link" db:"link"`
+	Status       string     `json:"status" db:"status"`
 	Grade        *string    `json:"grade" db:"grade"`
 	Feedback     *string    `json:"feedback" db:"feedback"`
-	SubmittedAt  time.Time `json:"submitted_at" db:"submitted_at"`
+	SubmittedAt  time.Time  `json:"submitted_at" db:"submitted_at"`
 	GradedAt     *time.Time `json:"graded_at" db:"graded_at"`
 }
 
-// type GradingSubmission struct {
-// 	UserId       string `validate:"required"`
-// 	AssignmentId string `json:"assignment_id" validate:"required"`
-// 	Link         string `json:"link" validate:"required"`
-// 	DueDate      string `json:"due_date"`
-// }
+type GradingSubmissionRequest struct {
+	UserId       string `validate:"required"`
+	SubmissionId string `json:"submission_id" validate:"required"`
+	Grade        string `json:"grade" validate:"required"`
+	Feedback     string `json:"feedback" validate:"required"`
+	Status       string `json:"status" validate:"required"`
+}
+
+type GradingSubmissionResponse struct {
+	Id           int        `json:"id" db:"id"`
+	Grade        string     `json:"grade" validate:"required"`
+	Feedback     string     `json:"feedback" validate:"required"`
+	Status       string     `json:"status" validate:"required"`
+	GradedAt     time.Time `json:"graded_at" db:"graded_at"`
+}
