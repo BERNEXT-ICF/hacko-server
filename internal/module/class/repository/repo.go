@@ -62,18 +62,24 @@ func (r *classRepository) CreateClass(ctx context.Context, req *entity.CreateCla
 func (r *classRepository) GetAllClasses(ctx context.Context) (*entity.GetAllClassesResponse, error) {
 
 	query := `
-		SELECT 
-			id,
-			title,
-			description,
-			image,
-			video,
-			status,
-			creator_class_id,
-			created_at,
-			updated_at
+		SELECT DISTINCT
+			c.id,
+			c.title,
+			c.description,
+			c.image,
+			c.video,
+			c.status,
+			c.creator_class_id,
+			c.created_at,
+			c.updated_at,
+			COALESCE(uc.enrollment_status, 'not_enrolled') AS status_enrollment,
+			COALESCE(up.progress, '0') AS progress
 		FROM 
-			class
+			class c
+		LEFT JOIN 
+			users_classes uc ON c.id = uc.class_id
+		LEFT JOIN 
+			users_progress up ON c.id = up.class_id
 	`
 
 	rows, err := r.db.QueryContext(ctx, query)
@@ -97,6 +103,8 @@ func (r *classRepository) GetAllClasses(ctx context.Context) (*entity.GetAllClas
 			&class.CreatorClassID,
 			&class.CreatedAt,
 			&class.UpdatedAt,
+			&class.StatusEnrollment,
+			&class.Progress,
 		)
 		if err != nil {
 			log.Error().Err(err).Msg("repo::GetAllClasses - Failed to scan row")
@@ -116,6 +124,8 @@ func (r *classRepository) GetAllClasses(ctx context.Context) (*entity.GetAllClas
 
 	return response, nil
 }
+
+
 
 func (r *classRepository) FindClass(ctx context.Context, id string) error {
 	query := `
@@ -631,7 +641,6 @@ func (r *classRepository) TrackModule(ctx context.Context, req *entity.TrackModu
 		return nil, err
 	}
 
-	// Update progress ke database jika perlu
 	updateQuery := `
 		UPDATE users_progress
 		SET progress = $1, updated_at = NOW()
@@ -677,4 +686,88 @@ func (r *classRepository) GetProgress(ctx context.Context, req *entity.GetProgre
 	}
 
 	return &progress, nil
+}
+
+func (r *classRepository) GetAllClassAdmin(ctx context.Context, req *entity.GetAllClassAdminRequest) (*[]entity.GetAllClassAdminResponse, error) {
+	query := `
+        SELECT
+            c.id,
+            c.title,
+            c.description AS desc,
+            c.status,
+            c.created_at,
+            c.updated_at,
+            COALESCE(m.materials_total, 0) AS materials_total,
+            COALESCE(mods.modules_total, 0) AS modules_total,
+            COALESCE(uc.student_enrolled_total, 0) AS student_enrolled_total
+        FROM
+            class c
+        LEFT JOIN (
+            SELECT
+                class_id,
+                COUNT(*) AS materials_total
+            FROM
+                materials
+            GROUP BY
+                class_id
+        ) m ON c.id = m.class_id
+        LEFT JOIN (
+            SELECT
+                mt.class_id,
+                COUNT(modules.id) AS modules_total
+            FROM
+                modules
+            JOIN materials mt ON modules.materials_id = mt.id
+            GROUP BY
+                mt.class_id
+        ) mods ON c.id = mods.class_id
+        LEFT JOIN (
+            SELECT
+                class_id,
+                COUNT(*) AS student_enrolled_total
+            FROM
+                users_classes
+            GROUP BY
+                class_id
+        ) uc ON c.id = uc.class_id
+        WHERE
+            c.creator_class_id = $1
+    `
+
+	var classes []entity.GetAllClassAdminResponse
+
+	rows, err := r.db.QueryContext(ctx, query, req.UserId)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to fetch class data")
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var class entity.GetAllClassAdminResponse
+		err := rows.Scan(
+			&class.Id,
+			&class.Title,
+			&class.Desc,
+			// &class.Tags,
+			&class.Status,
+			&class.CreatedAt,
+			&class.UpdatedAt,
+			&class.MaterialsTotal,
+			&class.ModulesTotal,
+			&class.StudentEnrolledTotal,
+		)
+		if err != nil {
+			log.Error().Err(err).Any("payload", req).Msg("repo::GetAllClassAdmin - Failed to get all class admin")
+			return nil, errmsg.NewCustomErrors(400, errmsg.WithMessage("Internal server error"))
+		}
+		classes = append(classes, class)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Error().Err(err).Any("payload", req).Msg("repo::GetAllClassAdmin - Error iterating over class rows")
+		return nil, errmsg.NewCustomErrors(400, errmsg.WithMessage("Internal server error"))
+	}
+
+	return &classes, nil
 }

@@ -34,10 +34,11 @@ func (h *classHandler) Register(router fiber.Router) {
 	router.Get("/class", h.GetAllClasses)
 	router.Get("/class/:id", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.GetOverviewClassById)
 
-	// route user
+	// user routes
 	router.Post("/class/:id/enroll", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.EnrollClass)
+	router.Post("/class/:classId/materials/:materialId/modules/:moduleId", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "teacher"}), h.TrackModule)
 
-	// route teacher, manage class
+	// teacher routes
 	router.Post("/class", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "admin", "teacher"}), h.CreateClassregister)
 	router.Put("/class/:id", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "teacher"}), h.UpdateClass)
 	router.Delete("/class/:id", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "teacher"}), h.DeleteClass)
@@ -46,7 +47,7 @@ func (h *classHandler) Register(router fiber.Router) {
 	router.Delete("/class/:id/users/:studentId", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "teacher"}), h.DeleteStudentClass)
 	router.Get("/class/:classId/users-not-enrolled/", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "teacher"}), h.GetAllUsersNotEnrolledClass)
 	router.Post("/class/:classId/users/:studentId", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "teacher"}), h.AddUserToClass)
-	router.Post("/class/:classId/materials/:materialId/modules/:moduleId", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "teacher"}), h.TrackModule)
+	router.Get("admin/class", middleware.AuthMiddleware, middleware.AuthRole([]string{"user", "teacher"}), h.GetAllClassAdmin)
 }
 
 func (h *classHandler) CreateClassregister(c *fiber.Ctx) error {
@@ -399,4 +400,29 @@ func (h *classHandler) TrackModule(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(response.Success(res, "Successfully tracking progress"))
+}
+
+func (h *classHandler) GetAllClassAdmin(c *fiber.Ctx) error {
+	var (
+		req = new(entity.GetAllClassAdminRequest)
+		ctx = c.Context()
+		v   = adapter.Adapters.Validator
+		l   = middleware.GetLocals(c)
+	)
+
+	req.UserId = l.GetUserId()
+
+	if err := v.Validate(req); err != nil {
+		log.Warn().Err(err).Msg("handler::GetAllClasAdmin - Invalid request body")
+		code, errs := errmsg.Errors(err, req)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	res, err := h.service.GetAllClassAdmin(ctx, req)
+	if err != nil {
+		code, errs := errmsg.Errors(err, req)
+		return c.Status(code).JSON(response.Error(errs))
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response.Success(res, "Successfully get all class"))
 }

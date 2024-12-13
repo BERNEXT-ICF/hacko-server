@@ -204,3 +204,93 @@ func (r *assignmentRepository) GetAssignmentDetails(ctx context.Context, req *en
 
 	return &response, nil
 }
+
+func (r *assignmentRepository) GetAllAssignmentByClassIdAdmin(ctx context.Context, req *entity.GetAllAssignmentByClassIdAdminRequest) (*[]entity.GetAllAssignmentByClassIdAdminResponse, error) {
+	query := `
+        SELECT id, creator_assignment_id, class_id, title, description, due_date, created_at, updated_at
+        FROM assignments
+        WHERE class_id = $1;
+    `
+
+	rows, err := r.db.QueryContext(ctx, query, req.ClassId)
+	if err != nil {
+		log.Error().Err(err).Str("class_id", req.ClassId).Msg("repo::GetAllAssignmentByClassIdAdmin - Failed to query assignments")
+		return nil, err
+	}
+	defer rows.Close()
+
+	var assignments []entity.GetAllAssignmentByClassIdAdminResponse
+	for rows.Next() {
+		var assignment entity.GetAllAssignmentByClassIdAdminResponse
+		err := rows.Scan(
+			&assignment.Id,
+			&assignment.CreatorAssignmentId,
+			&assignment.ClassId,
+			&assignment.Title,
+			&assignment.Description,
+			&assignment.DueDate,
+			&assignment.CreatedAt,
+			&assignment.UpdatedAt,
+		)
+		if err != nil {
+			log.Error().Err(err).Msg("repo::GetAllAssignmentByClassIdAdmin - Failed to scan assignment")
+			return nil, err
+		}
+
+		assignments = append(assignments, assignment)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Error().Err(err).Msg("repo::GetAllAssignmentByClassIdAdmin - Error during rows iteration")
+		return nil, err
+	}
+
+	return &assignments, nil
+}
+
+func (r *assignmentRepository) GetAssignmentDetailsAdmin(ctx context.Context, req *entity.GetAssignmentDetailsAdminRequest) (*entity.GetAssignmentDetailsAdminResponse, error) {
+
+	var assignment entity.GetAssignmentDetailsAdminResponse
+	query := `
+		SELECT 
+			id, title, description, due_date, created_at, updated_at
+		FROM 
+			assignments
+		WHERE 
+			id = $1
+	`
+	if err := r.db.GetContext(ctx, &assignment, query, req.AssignmentId); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Error().Err(err).Any("payload", req).Msg("No assignment details found")
+			return nil, errmsg.NewCustomErrors(400, errmsg.WithMessage("Assignment with that id not found"))
+		}
+		log.Error().Err(err).Any("payload", req).Msg("No assignment details found")
+		return nil, errmsg.NewCustomErrors(500, errmsg.WithMessage("Internal server error"))
+	}
+
+	var submissions []entity.GetSubmissionResponse
+	submissionQuery := `
+			SELECT 
+				s.id,
+				u.name AS name, 
+				u.image_url AS image, 
+				s.status AS status, 
+				s.submitted_at AS submitted_at
+			FROM 
+				submissions s
+			INNER JOIN 
+				users u
+			ON 
+				s.student_id = u.id
+			WHERE 
+				s.assignment_id = $1
+		`
+
+	if err := r.db.SelectContext(ctx, &submissions, submissionQuery, req.AssignmentId); err != nil {
+		log.Error().Err(err).Any("payload", req).Msg("No assignment details found")
+		return nil, errmsg.NewCustomErrors(500, errmsg.WithMessage("Internal server error"))
+	}
+
+	assignment.AllSubmission = submissions
+	return &assignment, nil
+}

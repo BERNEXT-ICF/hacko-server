@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"hacko-app/internal/module/submission/entity"
 	"hacko-app/internal/module/submission/ports"
 	"hacko-app/pkg/errmsg"
@@ -66,3 +67,95 @@ func (r *submissionRepository) SubmitAssignment(ctx context.Context, req *entity
 
     return &response, nil
 }
+
+func (r *submissionRepository) GetSubmissionDetails(ctx context.Context, req *entity.GetSubmissionDetailsRequest) (*entity.GetSubmissionDetailsResponse, error) {
+    query := `
+        SELECT 
+            s.id AS id,
+            s.id AS submission_id,
+            u.name AS name,
+            u.image_url AS image_url,
+            s.link AS link,
+            s.status AS status,
+            s.grade AS grade,
+            s.feedback AS feedback,
+            s.submitted_at AS submitted_at,
+            s.graded_at AS graded_at
+        FROM 
+            submissions s
+        INNER JOIN 
+            users u ON s.student_id = u.id
+        INNER JOIN 
+            assignments a ON s.assignment_id = a.id
+        WHERE 
+            s.id = $1 AND u.id = $2
+    `
+
+    var response entity.GetSubmissionDetailsResponse
+    err := r.db.QueryRowContext(ctx, query, req.SubmissionId, req.UserId).Scan(
+        &response.Id,
+        &response.SubmissionId,
+        &response.Name,
+        &response.Image,
+        &response.Link,
+        &response.Status,
+        &response.Grade,
+        &response.Feedback,
+        &response.SubmittedAt,
+        &response.GradedAt,
+    )
+    if err != nil {
+        if errors.Is(err, sql.ErrNoRows) {
+            log.Error().Any("payload", req).Msg("No submission details found")
+            return nil, errmsg.NewCustomErrors(400, errmsg.WithMessage("Submission with that ID not found"))
+        }
+        log.Error().Err(err).Msg("Failed to get submission details")
+        return nil, errmsg.NewCustomErrors(500, errmsg.WithMessage("Internal server error"))
+    }
+
+    return &response, nil
+}
+
+func (r *submissionRepository) GradingSubmission(ctx context.Context, req *entity.GradingSubmissionRequest) (*entity.GradingSubmissionResponse, error) {
+    query := `
+        UPDATE 
+            submissions
+        SET 
+            grade = $1,
+            feedback = $2,
+            status = $3,
+            graded_at = NOW()
+        WHERE 
+            id = $4
+        RETURNING 
+            id, grade, feedback, status, graded_at
+    `
+
+    var response entity.GradingSubmissionResponse
+
+    err := r.db.QueryRowContext(
+        ctx,
+        query,
+        req.Grade,
+        req.Feedback,
+        req.Status,
+        req.SubmissionId,
+    ).Scan(
+        &response.Id,
+        &response.Grade,
+        &response.Feedback,
+        &response.Status,
+        &response.GradedAt,
+    )
+    if err != nil {
+        if errors.Is(err, sql.ErrNoRows) {
+            log.Error().Any("payload", req).Msg("Submission not found for grading")
+            return nil, errmsg.NewCustomErrors(400, errmsg.WithMessage("Submission not found"))
+        }
+        log.Error().Err(err).Msg("Failed to grade submission")
+        return nil, err
+    }
+
+    return &response, nil
+}
+
