@@ -419,7 +419,9 @@ func (r *classRepository) GetAllUsersEnrolledClass(ctx context.Context, req *ent
 	query := `
 		SELECT  
 			u.id AS user_id,
-			u.name AS name
+			u.name AS name,
+			u.email AS email,
+			u.image_url AS image
 		FROM 
 			users AS u
 		INNER JOIN 
@@ -439,7 +441,7 @@ func (r *classRepository) GetAllUsersEnrolledClass(ctx context.Context, req *ent
 
 	for rows.Next() {
 		var user entity.GetUsersEnrolledClassResponse
-		if err := rows.Scan(&user.UserId, &user.Name); err != nil {
+		if err := rows.Scan(&user.UserId, &user.Name, &user.Email, &user.Image); err != nil {
 			log.Error().Err(err).Msg("repo::GetAllUsersEnrolledClass - Failed to scan user data")
 			return nil, err
 		}
