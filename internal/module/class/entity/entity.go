@@ -125,6 +125,8 @@ type GetAllUsersEnrolledClassRequest struct {
 type GetUsersEnrolledClassResponse struct {
 	UserId string `json:"user_id" db:"id"`
 	Name   string `json:"name" db:"name"`
+	Email  string `json:"email" db:"email"`
+	Image  *string `json:"image" db:"image_url"`
 }
 
 type GetAllUsersEnrolledClassResponse struct {
