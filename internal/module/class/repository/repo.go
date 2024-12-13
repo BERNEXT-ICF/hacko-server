@@ -62,18 +62,24 @@ func (r *classRepository) CreateClass(ctx context.Context, req *entity.CreateCla
 func (r *classRepository) GetAllClasses(ctx context.Context) (*entity.GetAllClassesResponse, error) {
 
 	query := `
-		SELECT 
-			id,
-			title,
-			description,
-			image,
-			video,
-			status,
-			creator_class_id,
-			created_at,
-			updated_at
+		SELECT DISTINCT
+			c.id,
+			c.title,
+			c.description,
+			c.image,
+			c.video,
+			c.status,
+			c.creator_class_id,
+			c.created_at,
+			c.updated_at,
+			COALESCE(uc.enrollment_status, 'not_enrolled') AS status_enrollment,
+			COALESCE(up.progress, '0') AS progress
 		FROM 
-			class
+			class c
+		LEFT JOIN 
+			users_classes uc ON c.id = uc.class_id
+		LEFT JOIN 
+			users_progress up ON c.id = up.class_id
 	`
 
 	rows, err := r.db.QueryContext(ctx, query)
@@ -97,6 +103,8 @@ func (r *classRepository) GetAllClasses(ctx context.Context) (*entity.GetAllClas
 			&class.CreatorClassID,
 			&class.CreatedAt,
 			&class.UpdatedAt,
+			&class.StatusEnrollment,
+			&class.Progress,
 		)
 		if err != nil {
 			log.Error().Err(err).Msg("repo::GetAllClasses - Failed to scan row")
@@ -116,6 +124,8 @@ func (r *classRepository) GetAllClasses(ctx context.Context) (*entity.GetAllClas
 
 	return response, nil
 }
+
+
 
 func (r *classRepository) FindClass(ctx context.Context, id string) error {
 	query := `

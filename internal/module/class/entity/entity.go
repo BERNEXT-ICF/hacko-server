@@ -23,16 +23,19 @@ type CreateClassResponse struct {
 }
 
 type GetClassResponse struct {
-	ID             int       `json:"id" db:"id"`
-	Title          string    `json:"title" db:"title"`
-	Description    string    `json:"description,omitempty" db:"description"`
-	Image          string    `json:"image,omitempty" db:"image"`
-	Video          string    `json:"video,omitempty" db:"video"`
-	Status         string    `json:"status" db:"status"`
-	CreatorClassID string    `json:"creator_class_id" db:"creator_class_id"`
-	CreatedAt      time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at" db:"updated_at"`
+	ID               int       `json:"id" db:"id"`
+	Title            string    `json:"title" db:"title"`
+	Description      string    `json:"description,omitempty" db:"description"`
+	Image            string    `json:"image,omitempty" db:"image"`
+	Video            string    `json:"video,omitempty" db:"video"`
+	Status           string    `json:"status" db:"status"`
+	StatusEnrollment string    `json:"status_enrollment" db:"status_enrollment"`
+	Progress         string    `json:"progress" db:"progress"`
+	CreatorClassID   string    `json:"creator_class_id" db:"creator_class_id"`
+	CreatedAt        time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at" db:"updated_at"`
 }
+
 type GetAllClassesResponse struct {
 	Classes []*GetClassResponse `json:"classes"`
 	Total   int                 `json:"total"`
