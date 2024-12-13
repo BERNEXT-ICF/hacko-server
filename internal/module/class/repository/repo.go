@@ -631,7 +631,6 @@ func (r *classRepository) TrackModule(ctx context.Context, req *entity.TrackModu
 		return nil, err
 	}
 
-	// Update progress ke database jika perlu
 	updateQuery := `
 		UPDATE users_progress
 		SET progress = $1, updated_at = NOW()
@@ -677,4 +676,88 @@ func (r *classRepository) GetProgress(ctx context.Context, req *entity.GetProgre
 	}
 
 	return &progress, nil
+}
+
+func (r *classRepository) GetAllClassAdmin(ctx context.Context, req *entity.GetAllClassAdminRequest) (*[]entity.GetAllClassAdminResponse, error) {
+	query := `
+        SELECT
+            c.id,
+            c.title,
+            c.description AS desc,
+            c.status,
+            c.created_at,
+            c.updated_at,
+            COALESCE(m.materials_total, 0) AS materials_total,
+            COALESCE(mods.modules_total, 0) AS modules_total,
+            COALESCE(uc.student_enrolled_total, 0) AS student_enrolled_total
+        FROM
+            class c
+        LEFT JOIN (
+            SELECT
+                class_id,
+                COUNT(*) AS materials_total
+            FROM
+                materials
+            GROUP BY
+                class_id
+        ) m ON c.id = m.class_id
+        LEFT JOIN (
+            SELECT
+                mt.class_id,
+                COUNT(modules.id) AS modules_total
+            FROM
+                modules
+            JOIN materials mt ON modules.materials_id = mt.id
+            GROUP BY
+                mt.class_id
+        ) mods ON c.id = mods.class_id
+        LEFT JOIN (
+            SELECT
+                class_id,
+                COUNT(*) AS student_enrolled_total
+            FROM
+                users_classes
+            GROUP BY
+                class_id
+        ) uc ON c.id = uc.class_id
+        WHERE
+            c.creator_class_id = $1
+    `
+
+	var classes []entity.GetAllClassAdminResponse
+
+	rows, err := r.db.QueryContext(ctx, query, req.UserId)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to fetch class data")
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var class entity.GetAllClassAdminResponse
+		err := rows.Scan(
+			&class.Id,
+			&class.Title,
+			&class.Desc,
+			// &class.Tags,
+			&class.Status,
+			&class.CreatedAt,
+			&class.UpdatedAt,
+			&class.MaterialsTotal,
+			&class.ModulesTotal,
+			&class.StudentEnrolledTotal,
+		)
+		if err != nil {
+			log.Error().Err(err).Any("payload", req).Msg("repo::GetAllClassAdmin - Failed to get all class admin")
+			return nil, errmsg.NewCustomErrors(400, errmsg.WithMessage("Internal server error"))
+		}
+		classes = append(classes, class)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Error().Err(err).Any("payload", req).Msg("repo::GetAllClassAdmin - Error iterating over class rows")
+		return nil, errmsg.NewCustomErrors(400, errmsg.WithMessage("Internal server error"))
+	}
+
+	return &classes, nil
 }

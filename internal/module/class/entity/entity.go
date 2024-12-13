@@ -167,26 +167,43 @@ type AddUsersToClassResponse struct {
 }
 
 type TrackModuleRequest struct {
-	UserId         string  `json:"user_id" validate:"required"`
-	ClassId        string  `json:"class_id" validate:"required"`
+	UserId  string `json:"user_id" validate:"required"`
+	ClassId string `json:"class_id" validate:"required"`
 	// UsersClassesId string  `json:"users_classes_id" validate:"required"`
-	MaterialId     string  `json:"material_id" validate:"required"`
-	ModuleId       string  `json:"module_id" validate:"required"`
+	MaterialId string `json:"material_id" validate:"required"`
+	ModuleId   string `json:"module_id" validate:"required"`
 	// QuizId         *string `json:"quiz_id,omitempty"`
-	StatusProgress string  `json:"status_progress"`
+	StatusProgress string   `json:"status_progress"`
 	Progress       *float64 `json:"progress"`
 }
 
 type TrackModuleResponse struct {
-	Id               int       `json:"id" db:"id"` 
-	UserId           string    `json:"user_id" db:"user_id"`
-	Progress         *float64   `json:"progress" db:"progress"`
-	StatusProgress   string    `json:"status_progress" db:"status_progress"`
-	CreatedAt        time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt        time.Time `json:"updated_at" db:"updated_at"`
+	Id             int       `json:"id" db:"id"`
+	UserId         string    `json:"user_id" db:"user_id"`
+	Progress       *float64  `json:"progress" db:"progress"`
+	StatusProgress string    `json:"status_progress" db:"status_progress"`
+	CreatedAt      time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at" db:"updated_at"`
 }
 
 type GetProgressRequest struct {
-	UserId         string  `json:"user_id" validate:"required"`
-	ClassId        string  `json:"class_id" validate:"required"`
+	UserId  string `json:"user_id" validate:"required"`
+	ClassId string `json:"class_id" validate:"required"`
+}
+
+type GetAllClassAdminRequest struct {
+	UserId string `json:"user_id" validate:"required"`
+}
+
+type GetAllClassAdminResponse struct {
+	Id                   int       `json:"id" db:"id"`
+	Title                string    `json:"title" db:"title"`
+	MaterialsTotal       string    `json:"materials_total"`
+	ModulesTotal         string    `json:"modules_total"`
+	Desc                 string    `json:"desc" db:"description"`
+	Tags                 *[]string `json:"tags" db:"tags"`
+	Status               string    `json:"status" db:"status"`
+	StudentEnrolledTotal string    `json:"student_enrolled_total"`
+	CreatedAt            time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt            time.Time `json:"updated_at" db:"updated_at"`
 }
